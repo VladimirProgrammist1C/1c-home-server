@@ -1,12 +1,17 @@
 # create-gitignore.ps1
 $ErrorActionPreference = "Stop"
+
 Write-Host "=== CREATING .GITIGNORE ===" -ForegroundColor Cyan
 
 $basePath = "E:\1C_Infrastructure"
 $gitignorePath = Join-Path $basePath ".gitignore"
 
 $gitignoreContent = @"
-# === УСТАНОВЛЕННЫЕ ПРОГРАММЫ ===
+# =============================================================================
+# .gitignore для 1C Home Server Infrastructure
+# =============================================================================
+
+# === УСТАНОВЛЕННЫЕ ПРОГРАММЫ (НЕ КОММИТИТЬ) ===
 Git/
 Mini AI 1C/
 Tools/
@@ -59,7 +64,11 @@ BACKUPS/
 Thumbs.db
 .DS_Store
 desktop.ini
-"@ | Out-File ".gitignore" -Encoding UTF8
+"@
+
+# Создаём файл с правильной кодировкой (UTF-8 без BOM)
+[System.IO.File]::WriteAllText($gitignorePath, $gitignoreContent, [System.Text.UTF8Encoding]::new($false))
 
 Write-Host "OK: .gitignore created" -ForegroundColor Green
 Write-Host "Path: $gitignorePath" -ForegroundColor Gray
+Write-Host "Encoding: UTF-8 without BOM" -ForegroundColor Gray
