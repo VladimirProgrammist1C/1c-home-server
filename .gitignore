@@ -1,0 +1,53 @@
+﻿# === РЈРЎРўРђРќРћР’Р›Р•РќРќР«Р• РџР РћР“Р РђРњРњР« ===
+Git/
+Mini AI 1C/
+Tools/
+VPN/
+inetpub/
+
+# === OLLAMA ===
+AI/Ollama/bin/
+AI/Ollama/models/
+AI/Ollama/logs/
+
+# === РњР•Р”РРђ Р РћР‘Р РђР—Р« ===
+*.mp4
+*.avi
+*.mkv
+*.iso
+*.vhdx
+*.vhd
+
+# === РўРЇР–РЃР›Р«Р• Р¤РђР™Р›Р« ===
+*.exe
+*.msi
+*.zip
+*.7z
+*.gguf
+*.bin
+
+# === Р›РћР“Р Р Р’Р Р•РњР•РќРќР«Р• ===
+*.log
+logs/
+BACKUPS/
+*.bak
+
+# === РЎР•РљР Р•РўР« ===
+.env
+.env.local
+
+# === 1РЎ Р¤РђР™Р›Р« ===
+*.cf
+*.cfu
+*.dt
+1Cv8.1CD
+1Cv8.Log
+
+# === IDE ===
+.vscode/
+.idea/
+
+# === WINDOWS ===
+Thumbs.db
+.DS_Store
+desktop.ini
