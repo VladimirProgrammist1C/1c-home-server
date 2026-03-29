@@ -24,8 +24,10 @@ services:
     container_name: portainer
     restart: unless-stopped
     ports:
-      - "9000:9000"
-      - "8000:8000"
+#      - "9000:9000"
+#      - "8000:8000"
+      - "0.0.0.0:9000:9000"  # ← важно! не 127.0.0.1, Portainer
+      - "0.0.0.0:8000:8000"  # ← важно! не 127.0.0.1, Portainer
     volumes:
       - //./pipe/docker_engine:/var/run/docker.sock
       - portainer-data:/data
@@ -40,7 +42,8 @@ services:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@example.com}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
     ports:
-      - "5050:80"
+#      - "5050:80"
+      - "0.0.0.0:5050:80"    # ← важно! pgAdmin
     volumes:
       - pgadmin-data:/var/lib/pgadmin
     networks:
