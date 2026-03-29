@@ -1,523 +1,384 @@
-#  Руководство по развёртыванию инфраструктуры 1С на локальном сервере
+# 🔧 Руководство по развёртыванию инфраструктуры 1С
 
-**Версия:** 1.0  
-**Дата:** 28.03.2026  
-**Оборудование:** Geekom A9 Max (Ryzen AI 9 HX 370, Windows 11 Pro)  
-**Файл:** `E:\1C_Infrastructure\docs\infrastructure-guide.md`
-
----
-
-## Содержание
-
-1. [Подготовка структуры каталогов](#1-подготовка-структуры-каталогов)
-2. [Установка платформы 1С (ручная)](#2-установка-платформы-1С-ручная)
-3. [Настройка символических ссылок](#3-настройка-символических-ссылок)
-4. [Создание ярлыков 1С](#4-создание-ярлыков-1С)
-5. [Настройка Ollama для AI-задач](#5-настройка-ollama-для-ai-задач)
-6. [Система контроля версий (Git)](#6-система-контроля-версий-git)
-7. [Диагностика проблем](#7-диагностика-проблем)
-8. [Приложения](#приложения)
+**Версия:** 2.0  
+**Дата:** 30 марта 2026  
+**Оборудование:** Geekom A9 Max (Ryzen AI 9 HX 370, 32 ГБ ОЗУ)  
+**Статус:** ✅ Инфраструктура СУБД готова
 
 ---
 
-## 1. Подготовка структуры каталогов
+## 📊 Что РЕАЛЬНО сделано (актуальный статус)
 
-### Рекомендуемая структура на диске E:
+| Этап | Задача | Статус | Дата |
+|------|--------|--------|------|
+| **1** | Docker-инфраструктура (PostgreSQL + Portainer + pgAdmin) | ✅ **Готово** | 27.03.2026 |
+| **2** | Git-репозиторий с документацией | ✅ **Готово** | 29.03.2026 |
+| **3** | README.md + PDF с page-breaks | ✅ **Готово** | 29.03.2026 |
+| **4** | TIMING.md (учёт времени) | ✅ **Готово** | 29.03.2026 |
+| **5** | SUMMARY.md (ретроспектива) | ✅ **Готово** | 30.03.2026 |
+| **6** | Tailscale VPN + удалённый доступ | ✅ **Готово** | 30.03.2026 |
+| **7** | docker-compose.yml (оркестрация) | ✅ **Готово** | 30.03.2026 |
+| **8** | GitHub 2FA (двухфакторная аутентификация) | ✅ **Готово** | 26.03.2026 |
+| **9** | 1С:Предприятие на хосте | ⏳ **В плане** | - |
+| **10** | 1С:Сервер (агент) | ⏳ **В плане** | - |
+| **11** | Бэкапы PostgreSQL (Обновлятор 1С) | ⏳ **В плане** | - |
+
+---
+
+## 🏗️ Текущая архитектура
 
 ```
-E:\
-├── 1C_Infrastructure\           # Основная инфраструктура
-│   ├── AI\                       # AI-модули
-│   │   └── Ollama\              # Локальные LLM
-│   │       ├── bin\             # Бинарники
-│   │       ├── models\          # Модели
-│   │       ├── logs\            # Логи
-│   │       └── config\          # Конфигурации
-│   ├── Mini AI 1C\              # AI-ассистент для 1С
-│   ├── docs\                    # Документация
-│   │   └── infrastructure-guide.md
-│   ├── scripts\                 # Скрипты автоматизации
-│   └── docker-compose.yml       # Контейнеры (PostgreSQL и др.)
-│
-├── DEV_LOCAL\                    # Локальная разработка
-│   └── INSTALLED\
-│       └── 1cv8\                # Платформа 1С
-│           └── 8.5.1.1150\      # Версия платформы
-│               └── bin\
-│
-└── _BACKUPS\                     # Резервные копии
-    └── 1cv8_C_drive_backup_...
-```
-
-### Скрипт создания структуры:
-
-```powershell
-$directories = @(
-    "E:\1C_Infrastructure\AI\Ollama\bin",
-    "E:\1C_Infrastructure\AI\Ollama\models",
-    "E:\1C_Infrastructure\AI\Ollama\logs",
-    "E:\1C_Infrastructure\AI\Ollama\config",
-    "E:\1C_Infrastructure\Mini AI 1C",
-    "E:\1C_Infrastructure\docs",
-    "E:\1C_Infrastructure\scripts",
-    "E:\DEV_LOCAL\INSTALLED\1cv8",
-    "E:\_BACKUPS"
-)
-
-foreach ($dir in $directories) {
-    New-Item -ItemType Directory -Path $dir -Force | Out-Null
-}
+┌─────────────────────────────────────────┐
+│  🪟 Windows 11 Pro (Geekom A9 Max)      │
+│  Tailscale IP: 100.74.x.x               │
+├─────────────────────────────────────────┤
+│                                         │
+│  ✅ DOCKER-ИНФРАСТРУКТУРА (WSL2):      │
+│  ├─ 🐳 PostgreSQL 18.1-2.1C :5432      │
+│  ├─ 🐳 Portainer         :9000         │
+│  └─  pgAdmin           :5050         │
+│                                         │
+│  ✅ УДАЛЁННЫЙ ДОСТУП (Tailscale):      │
+│  ├─ RDP → хост (основной сценарий)     │
+│  ├─ Веб: 100.74.x.x:9000 (Portainer)   │
+│  └─ Веб: 100.74.x.x:5050 (pgAdmin)     │
+│                                         │
+│  ✅ ДОКУМЕНТАЦИЯ:                       │
+│  ├─ README.md + README.pdf             │
+│  ├─ docs/TIMING.md                     │
+│  ├─ docs/SUMMARY.md                    │
+│  └─ docs/INFRASTRUCTURE-GUIDE.md       │
+│                                         │
+└─────────────────────────────────────────┘
 ```
 
 ---
 
-## 2. Установка платформы 1С (ручная)
+## 📁 Структура проекта (актуальная)
 
-### Вариант А: Ручная установка (без setup.exe)
-
-Если нужно быстро развернуть платформу без официальной установки:
-
-1. Скопируйте файлы платформы в:
-   ```
-   E:\DEV_LOCAL\INSTALLED\1cv8\8.5.1.1150\
-   ```
-
-2. Проверьте наличие:
-   ```
-   E:\DEV_LOCAL\INSTALLED\1cv8\8.5.1.1150\bin\1cv8.exe
-   E:\DEV_LOCAL\INSTALLED\1cv8\8.5.1.1150\bin\1cv8c.exe
-   ```
-
-### Вариант Б: Официальная установка
-
-При установке через `setup.exe`:
-- Укажите путь: `E:\DEV_LOCAL\INSTALLED\1cv8\8.5.1.1150`
-- Установщик автоматически создаст записи в реестре
-
----
-
-## 3. Настройка символических ссылок
-
-### Зачем это нужно?
-
-- Некоторые приложения (Mini-AI-1C, сторонние инструменты) ищут 1С только в стандартных путях
-- Символическая ссылка позволяет хранить файлы на E:, но «обмануть» приложения
-
-### Скрипт создания ссылки (с бэкапом):
-
-```powershell
-# ================= НАСТРОЙКИ =================
-$PLATFORM_PATH = "E:\DEV_LOCAL\INSTALLED\1cv8\8.5.1.1150"
-$LINK_PATH = "C:\Program Files\1cv8"
-$BACKUP_ROOT = "E:\_BACKUPS"
-$BACKUP_PATH = "$BACKUP_ROOT\1cv8_C_drive_backup_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
-# =============================================
-
-Write-Host "=== БЕЗОПАСНОЕ СОЗДАНИЕ ССЫЛКИ ===" -ForegroundColor Cyan
-
-# 1. Проверка исходного пути
-if (-not (Test-Path $PLATFORM_PATH)) {
-    Write-Host "✗ Платформа не найдена: $PLATFORM_PATH" -ForegroundColor Red
-    exit
-}
-
-# 2. Бэкап существующей папки (если есть)
-if (Test-Path $LINK_PATH) {
-    New-Item -ItemType Directory -Path $BACKUP_PATH -Force | Out-Null
-    Copy-Item "$LINK_PATH\*" -Destination $BACKUP_PATH -Recurse -Force
-    Remove-Item $LINK_PATH -Recurse -Force
-    Write-Host "✓ Бэкап создан: $BACKUP_PATH" -ForegroundColor Green
-}
-
-# 3. Создание символической ссылки (PowerShell от Администратора!)
-New-Item -ItemType SymbolicLink -Path $LINK_PATH -Target $PLATFORM_PATH -Force
-
-# 4. Проверка
-if (Test-Path "$LINK_PATH\bin\1cv8.exe") {
-    Write-Host "✓ Ссылка создана и работает!" -ForegroundColor Green
-} else {
-    Write-Host "✗ Ошибка создания ссылки" -ForegroundColor Red
-}
 ```
-
-### Проверка ссылки:
-
-```powershell
-$link = Get-Item "C:\Program Files\1cv8"
-Write-Host "Ссылка: $($link.Target)"
-Test-Path "C:\Program Files\1cv8\bin\1cv8.exe"  # Должно вернуть True
-```
-
-### Важные замечания:
-
-- ⚠️ **Запустите PowerShell от имени Администратора**
-- ⚠️ **Остановите все процессы 1С перед созданием ссылки**
-- ✅ Бэкап автоматически создаётся в `E:\_BACKUPS\`
-
----
-
-## 4. Создание ярлыков 1С
-
-### Скрипт создания ярлыков:
-
-```powershell
-$WshShell = New-Object -ComObject WScript.Shell
-$platformPath = "C:\Program Files\1cv8\bin"
-
-# Ярлык Конфигуратора
-$shortcut = $WshShell.CreateShortcut("$env:USERPROFILE\Desktop\1C Конфигуратор.lnk")
-$shortcut.TargetPath = "$platformPath\1cv8c.exe"
-$shortcut.WorkingDirectory = $platformPath
-$shortcut.IconLocation = "$platformPath\1cv8c.exe,0"
-$shortcut.Description = "1С:Предприятие 8.3 - Конфигуратор"
-$shortcut.Save()
-
-# Ярлык Предприятия
-$shortcut = $WshShell.CreateShortcut("$env:USERPROFILE\Desktop\1C Предприятие.lnk")
-$shortcut.TargetPath = "$platformPath\1cv8.exe"
-$shortcut.WorkingDirectory = $platformPath
-$shortcut.IconLocation = "$platformPath\1cv8.exe,0"
-$shortcut.Description = "1С:Предприятие 8.3 - Клиент"
-$shortcut.Save()
-
-# Ярлыки в меню Пуск
-$startMenuPath = "$env:PROGRAMDATA\Microsoft\Windows\Start Menu\Programs\1C"
-New-Item -ItemType Directory -Path $startMenuPath -Force | Out-Null
-
-$shortcut = $WshShell.CreateShortcut("$startMenuPath\1C Конфигуратор.lnk")
-$shortcut.TargetPath = "$platformPath\1cv8c.exe"
-$shortcut.WorkingDirectory = $platformPath
-$shortcut.Save()
-
-$shortcut = $WshShell.CreateShortcut("$startMenuPath\1C Предприятие.lnk")
-$shortcut.TargetPath = "$platformPath\1cv8.exe"
-$shortcut.WorkingDirectory = $platformPath
-$shortcut.Save()
-
-Write-Host "✓ Ярлыки созданы!" -ForegroundColor Green
+E:\1C_Infrastructure\
+├── .env                      # ✅ Пароли (НЕ КОММИТИТЬ!)
+├── .env.example              # ✅ Шаблон
+├── .gitignore                # ✅ Исключения
+├── docker-compose.yml        # ✅ Оркестрация (PostgreSQL + Portainer + pgAdmin)
+├── README.md                 # ✅ Основная документация
+├── docs/
+│   ├── INFRASTRUCTURE-GUIDE.md  # ✅ Это руководство
+│   ├── TIMING.md                # ✅ Детальный учёт времени
+│   └── SUMMARY.md               # ✅ Ретроспектива проекта
+└── docker/
+    └── postgres-1c/
+        ├── Dockerfile            # ✅ Сборка образа PostgreSQL 1С
+        ├── entrypoint.sh         # ✅ Инициализация БД
+        └── postgresql_*.tar.bz2  # ⚠️ Дистрибутив 1С (НЕ КОММИТИТЬ!)
 ```
 
 ---
 
-## 5. Настройка Ollama для AI-задач
+## 🚀 Как развёрнуть (инструкция для нового места)
 
-### Полная переустановка Ollama на E:
-
-```powershell
-# 1. Остановить службу
-Stop-Service ollama -Force
-Get-Process ollama -ErrorAction SilentlyContinue | Stop-Process -Force
-
-# 2. Удалить старые данные
-Remove-Item "$env:LOCALAPPDATA\Programs\Ollama" -Recurse -Force
-Remove-Item "$env:USERPROFILE\.ollama" -Recurse -Force
-
-# 3. Очистить переменные окружения
-[Environment]::SetEnvironmentVariable("OLLAMA_MODELS", $null, "User")
-[Environment]::SetEnvironmentVariable("OLLAMA_HOST", $null, "User")
-
-# 4. Создать новую структуру
-$ollamaRoot = "E:\1C_Infrastructure\AI\Ollama"
-New-Item -ItemType Directory -Path "$ollamaRoot\bin", "$ollamaRoot\models", "$ollamaRoot\logs" -Force
-
-# 5. Скачать бинарники
-$version = "v0.5.12"
-Invoke-WebRequest -Uri "https://github.com/ollama/ollama/releases/download/$version/ollama-windows-amd64.zip" -OutFile "$env:TEMP\ollama.zip"
-Expand-Archive -Path "$env:TEMP\ollama.zip" -DestinationPath "$ollamaRoot\bin" -Force
-
-# 6. Настроить переменные окружения
-[Environment]::SetEnvironmentVariable("OLLAMA_MODELS", "$ollamaRoot\models", "User")
-
-# 7. Создать службу (Task Scheduler)
-$startScript = @"
-`$env:OLLAMA_MODELS = "E:\1C_Infrastructure\AI\Ollama\models"
-& "E:\1C_Infrastructure\AI\Ollama\bin\ollama.exe" serve
-"@
-$startScript | Out-File "$ollamaRoot\start-ollama.ps1" -Encoding UTF8
-
-$action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-WindowStyle Hidden -ExecutionPolicy Bypass -File `"$ollamaRoot\start-ollama.ps1`""
-$trigger = New-ScheduledTaskTrigger -AtLogon
-Register-ScheduledTask -TaskName "Ollama Service" -Action $action -Trigger $trigger -RunLevel Highest -Force
-Start-ScheduledTask -TaskName "Ollama Service"
-```
-
-### Рекомендуемые модели для 1С-разработки:
+### Шаг 1: Клонировать репозиторий
 
 ```powershell
-# Баланс скорости и качества (рекомендуется):
-& "E:\1C_Infrastructure\AI\Ollama\bin\ollama.exe" pull qwen2.5:7b
-
-# Более точная (требует больше ОЗУ):
-& "E:\1C_Infrastructure\AI\Ollama\bin\ollama.exe" pull qwen2.5:14b
-
-# Быстрая, но слабее в русском:
-& "E:\1C_Infrastructure\AI\Ollama\bin\ollama.exe" pull llama3.2:3b
-```
-
-### Проверка работы:
-
-```powershell
-& "E:\1C_Infrastructure\AI\Ollama\bin\ollama.exe" --version
-& "E:\1C_Infrastructure\AI\Ollama\bin\ollama.exe" list
-& "E:\1C_Infrastructure\AI\Ollama\bin\ollama.exe" run qwen2.5:7b "Привет!"
-```
-
----
-
-## 6. Система контроля версий (Git)
-
-### 6.1. Зачем Git для инфраструктуры?
-
-| Проблема без Git | Решение с Git |
-|------------------|---------------|
-| Ручное копирование версий | Автоматическое версионирование через `git tag` |
-| «Что я менял?» | `git log` покажет историю |
-| «Я что-то сломал» | `git restore` или `git checkout v1.0` |
-| Риск потерять всё | Push на GitHub = бэкап |
-
-> ⚠️ **НЕ коммитьте:** модели Ollama, логи, бэкапы, базы данных, файлы с паролями
-
-### 6.2. Установка и настройка
-
-```powershell
-# Проверка
-git --version
-
-# Настройка пользователя (один раз)
-git config --global user.name "Ваше Имя"
-git config --global user.email "ваш@email.com"
-
-# Инициализация
+git clone https://github.com/VladimirProgrammist1C/1c-infrastructure.git
 cd E:\1C_Infrastructure
-git init
 ```
 
-### 6.3. Создание .gitignore
+### Шаг 2: Настроить переменные окружения
 
 ```powershell
-@"
-# Модели Ollama
-AI/Ollama/models/
-*.bin
-*.gguf
-
-# Логи
-*.log
-logs/
-
-# Переменные окружения
-.env
-.env.local
-
-# Резервные копии
-BACKUPS/
-*.bak
-
-# Временные файлы
-Thumbs.db
-.DS_Store
-
-# 1С файлы
-*.cf
-*.cfu
-*.dt
-1Cv8.1CD
-1Cv8.Log
-
-# IDE
-.vscode/
-.idea/
-"@ | Out-File ".gitignore" -Encoding UTF8
+Copy-Item .env.example .env
+code .env  # Заполнить пароли
 ```
 
-### 6.4. Первый коммит
+### Шаг 3: Скачать PostgreSQL 1C
 
 ```powershell
-git add .
-git commit -m "v1.0: Initial setup - 1C Platform + Ollama + Documentation"
-git tag v1.0
-git log --oneline
+# С ИТС: https://releases.1c.ru/project/Platform88
+# Файл: postgresql_18.1_2_ubuntu_22.04_x86_64_package.tar.bz2
+# Разместить в: .\docker\postgres-1c\
 ```
 
-### 6.5. Внесение изменений
+### Шаг 4: Собрать образ
 
 ```powershell
-# При каждом изменении:
-git status
-git add docs/ scripts/
-git commit -m "v1.1: Описание изменений"
-git tag v1.1
+docker build -t postgres:18.1-2.1C-ubuntu2204 .\docker\postgres-1c\ --no-cache
 ```
 
-### 6.6. Отправка на GitHub (опционально)
+### Шаг 5: Запустить сервисы
 
 ```powershell
-git remote add origin https://github.com/ВАШ_НИК/home-lab-infra.git
-git push -u origin main
-git push origin --tags
+docker-compose up -d
 ```
 
-### 6.7. Откат к версии
+### Шаг 6: Проверить
 
 ```powershell
-git tag                     # Показать версии
-git checkout v1.0           # Просмотр версии
-git checkout main           # Вернуться к последней
-git reset --soft HEAD~1     # Отменить коммит
+docker-compose ps
+# Должно быть:
+# postgres-1c   Up (healthy)
+# portainer     Up
+# pgadmin4      Up
+```
+
+### Шаг 7: Настроить Tailscale (удалённый доступ)
+
+```powershell
+# Установить Tailscale
+winget install Tailscale.Tailscale
+
+# Авторизоваться
+tailscale up
+
+# Узнать IP
+tailscale ip
+# Пример: 100.74.115.111
+
+# Проверить доступность портов
+netstat -an | findstr ":9000 :5050"
+# Должно быть: 0.0.0.0:9000, 0.0.0.0:5050
+```
+
+**Доступ через Tailscale:**
+- Portainer: `http://100.74.x.x:9000`
+- pgAdmin: `http://100.74.x.x:5050`
+
+### Шаг 8: Настроить Portainer (первый вход)
+
+1. Открыть: `http://localhost:9000` (или через Tailscale)
+2. Создать пользователя admin (пароль ≥12 символов)
+3. Выбрать: **Docker Standalone** → **API**
+4. Docker API URL: `host.docker.internal:2375`
+5. TLS: **выключено**
+6. Connect ✅
+
+> ⚠️ **Важно:** В Docker Desktop должен быть включён TCP API:  
+> Settings → General → ✅ Expose daemon on tcp://localhost:2375 without TLS
+
+### Шаг 9: Настроить pgAdmin
+
+1. Открыть: `http://localhost:5050`
+2. Войти: admin@example.com / пароль из .env
+3. Servers → Register → Server
+4. **General:**
+   - Name: `PostgreSQL 1C`
+5. **Connection:**
+   - Host: `postgres` ← имя сервиса из docker-compose!
+   - Port: `5432`
+   - Maintenance database: `template1c`
+   - Username: `postgres`
+   - Password: из .env
+   - ✅ Save password
+6. Save ✅
+
+---
+
+## 🐳 Оркестрация: docker-compose
+
+### Структура docker-compose.yml
+
+```yaml
+version: "3.9"
+services:
+  postgres:    # PostgreSQL 1C (СУБД)
+  portainer:   # Управление Docker (веб)
+  pgadmin:     # Администрирование БД (веб)
+```
+
+### Ключевые настройки
+
+| Параметр | Значение | Почему |
+|----------|----------|--------|
+| `ports: 0.0.0.0:9000` | Все интерфейсы | Доступ через Tailscale |
+| `volumes: named` | postgres-data | Переносимость, бэкапы |
+| `healthcheck` | pg_isready | Авто-перезапуск при сбое |
+| `restart: unless-stopped` | Авто-старт | После перезагрузки ПК |
+
+### Переменные окружения (.env)
+
+```env
+# Пароли и настройки (НЕ КОММИТИТЬ!)
+DB_PASSWORD=ChangeMe123!
+PGADMIN_EMAIL=admin@example.com
+PGADMIN_PASSWORD=admin
+```
+
+**Создание из шаблона:**
+```powershell
+Copy-Item .env.example .env
+code .env  # Заполнить пароли
+```
+
+### Диагностика
+
+```powershell
+# Проверить конфигурацию
+docker-compose config
+
+# Проверить логи
+docker-compose logs postgres --tail 20
+
+# Проверить healthcheck
+docker inspect postgres-1c --format='{{.State.Health.Status}}'
+# Должно вернуть: healthy
 ```
 
 ---
 
-## 7. Диагностика проблем
-
-### 7.1. Mini-AI-1C не находит платформу 1С
-
-**Симптомы:**
-```
-HELP_STATUS:unavailable:1C Platform not found in standard paths
-```
-
-**Решение:**
+## 🔧 Основные команды
 
 ```powershell
-# 1. Проверить символическую ссылку
-Get-Item "C:\Program Files\1cv8" | Select-Object Target
-Test-Path "C:\Program Files\1cv8\bin\1cv8.exe"
+# Просмотр логов
+docker-compose logs postgres --tail 50
+docker-compose logs portainer --tail 50
 
-# 2. Проверить реестр
-Get-ItemProperty "HKLM:\SOFTWARE\WOW6432Node\1C\1Cv8"
+# Перезапуск
+docker-compose restart postgres
 
-# 3. Добавить запись в реестр (если нужно)
-$regPath = "HKLM:\SOFTWARE\WOW6432Node\1C\1Cv8"
-New-ItemProperty -Path $regPath -Name "InstallPath" -Value "E:\DEV_LOCAL\INSTALLED\1cv8\8.5.1.1150" -Force
-New-ItemProperty -Path $regPath -Name "Version" -Value "8.5.1.1150" -Force
+# Остановка
+docker-compose down
 
-# 4. Перезапустить Mini-AI-1C
-```
+# Остановка с удалением данных (⚠ осторожно!)
+docker-compose down -v
 
-### 7.2. Ярлыки 1С не работают
+# Подключение к PostgreSQL
+docker-compose exec postgres psql -U postgres -d template1c
 
-**Диагностика:**
-```powershell
-$shortcuts = Get-ChildItem -Path "$env:USERPROFILE\Desktop" -Filter "*1C*.lnk"
-foreach ($sc in $shortcuts) {
-    $shell = New-Object -ComObject WScript.Shell
-    $link = $shell.CreateShortcut($sc.FullName)
-    Write-Host "$($sc.Name): $($link.TargetPath)"
-    Test-Path $link.TargetPath
-}
-```
+# Проверка версии
+docker-compose exec postgres psql -U postgres -c "SELECT version();"
 
-**Решение:** Пересоздать ярлыки (см. раздел 4)
-
-### 7.3. Ollama не определяется путь к моделям
-
-```powershell
-# Проверка
-echo $env:OLLAMA_MODELS
-
-# Решение
-[Environment]::SetEnvironmentVariable("OLLAMA_MODELS", "E:\1C_Infrastructure\AI\Ollama\models", "User")
-Restart-Service ollama -Force
-```
-
-### 7.4. Символическая ссылка не работает
-
-```powershell
-# Удалить старую
-Remove-Item "C:\Program Files\1cv8" -Force
-
-# Создать новую
-New-Item -ItemType SymbolicLink -Path "C:\Program Files\1cv8" -Target "E:\DEV_LOCAL\INSTALLED\1cv8\8.5.1.1150" -Force
-
-# Проверить
-Test-Path "C:\Program Files\1cv8\bin\1cv8.exe"
+# Статус
+docker-compose ps
 ```
 
 ---
 
-## Приложения
+## 🔐 Безопасность
 
-### Приложение A: Быстрые команды Git
+### ✅ Что уже сделано:
+
+- ✅ Пароли в `.env` (добавлен в `.gitignore`)
+- ✅ Именованные volumes (не bind mounts)
+- ✅ Healthcheck для PostgreSQL
+- ✅ Private GitHub репозиторий
+- ✅ GitHub 2FA включена
+- ✅ Tailscale VPN (шифрование WireGuard)
+- ✅ Доступ только у авторизованных устройств
+
+### ⚠️ Что нужно сделать:
+
+- [ ] Настроить автоматические бэкапы БД (Обновлятор 1С)
+- [ ] Добавить мониторинг (cAdvisor/Grafana)
+- [ ] Настроить Tailscale с 2FA (опционально)
+
+---
+
+## 🛠️ Устранение проблем
+
+### Portainer не подключается
 
 ```powershell
-# Инициализация
-git init
-git config --global user.name "Имя"
-git config --global user.email "email"
+# Проверить TCP API
+curl http://localhost:2375/version
 
-# Ежедневная работа
-git status          # Что изменилось
-git add .           # Добавить всё
-git commit -m "..." # Закоммитить
-git tag v1.X        # Пометить версию
-git log --oneline   # История
-
-# GitHub
-git remote add origin <url>
-git push -u origin main
-git push origin --tags
-
-# Откат
-git checkout v1.0   # Просмотр версии
-git checkout main   # Вернуться к последней
-git reset --soft HEAD~1  # Отменить коммит
+# Перезапустить Portainer
+docker-compose restart portainer
 ```
 
-### Приложение B: Контрольный список развёртывания
+### PostgreSQL не запускается
 
-```
-[ ] 1. Создать структуру каталогов на E:
-[ ] 2. Установить платформу 1С (в E:\DEV_LOCAL\INSTALLED\1cv8\)
-[ ] 3. Создать символическую ссылку C:\Program Files\1cv8
-[ ] 4. Создать ярлыки 1С на рабочем столе
-[ ] 5. Установить Ollama на E:\1C_Infrastructure\AI\Ollama
-[ ] 6. Скачать модели (qwen2.5:7b)
-[ ] 7. Установить Mini-AI-1C
-[ ] 8. Настроить Git-репозиторий
-[ ] 9. Создать .gitignore
-[ ] 10. Сделать первый коммит (v1.0)
-[ ] 11. Настроить PostgreSQL (Docker/VM)
-[ ] 12. Настроить Tailscale для удалённого доступа
-[ ] 13. Протестировать всю инфраструктуру
+```powershell
+# Посмотреть логи
+docker-compose logs postgres
+
+# Пересоздать
+docker-compose down -v
+docker-compose up -d
 ```
 
-### Приложение C: Шаблон CHANGELOG.md
+### Забыли пароль от pgAdmin
 
-```markdown
-# История изменений инфраструктуры
+```powershell
+# Сбросить через docker
+docker-compose exec pgadmin4 pgadmin4-cli reset-password admin@example.com
+```
 
-## [1.0] - 2026-03-28
-### Добавлено
-- Базовая структура каталогов на E:
-- Установка платформы 1С (ручная)
-- Символические ссылки для совместимости
-- Ярлыки 1С на рабочем столе
-- Настройка Ollama (локальные LLM)
-- Git-репозиторий для версионирования
+### Нет доступа через Tailscale
 
-### Известные проблемы
-- Mini-AI-1C не находит платформу без записей в реестре
-- Требуется ответ от разработчика Mini-AI-1C
+```powershell
+# 1. Проверить Tailscale
+tailscale status
 
-### Исправлено
-- Нерабочие ярлыки 1С (пересозданы)
+# 2. Проверить IP
+tailscale ip
+
+# 3. Проверить порты
+netstat -an | findstr ":9000 :5050"
+
+# 4. Проверить брандмауэр
+# Разрешить порты 9000 и 5050
 ```
 
 ---
 
-## 📋 Статус проекта
+## 📈 Планы развития (приоритеты)
 
-| Этап | Задача | Статус |
-|------|--------|--------|
-| **1** | Платформа 1С + символические ссылки | ✅ Готово |
-| **2** | Ярлыки 1С | ✅ Готово |
-| **3** | Git-репозиторий | ✅ Готово |
-| **4** | Ollama (локальные LLM) | ⏳ Частично |
-| **5** | Mini-AI-1C интеграция | ⏸️ Ждём ответ разработчика |
-| **6** | PostgreSQL в Docker/VM | 📅 Следующий шаг |
-| **7** | 1С Server в ВМ (dev/test/prod) | 📅 После PostgreSQL |
-| **8** | Portainer (веб-панель) | 📅 Параллельно с Docker |
-| **9** | Tailscale (удалённый доступ) | ✅ Настроено |
-| **10** | Бэкапы и мониторинг | 📅 Финальный этап |
+### 🔥 Высокий приоритет (эта неделя):
 
+1. **Установить 1С:Предприятие на хост** (~30 мин)
+   - Скачать с ИТС: `1C_Enterprise_8.3.25.xxx.exe`
+   - Установить: Клиент + Конфигуратор
+
+2. **Подключить 1С к PostgreSQL** (~15 мин)
+   - Создать ИБ в Конфигураторе
+   - СУБД: PostgreSQL
+   - Сервер БД: `localhost`
+   - Имя БД: `template1c`
+
+3. **Настроить Обновлятор 1С** (~30 мин)
+   - Установить в `E:\1C_Infrastructure\Tools\Updater1C\`
+   - Настроить бэкапы PostgreSQL + конфигураций
+
+### ⚡ Средний приоритет (следующая неделя):
+
+4. **1С:Сервер (агент) на хосте** (~2-3 часа)
+   - Установить и настроить
+   - Подключить лицензию developer.1c.ru
+
+5. **Терминальный сервер в ВМ** (~2 часа)
+   - Hyper-V + Windows 11
+   - Для удалённой разработки
+
+### 📝 Низкий приоритет (когда будет время):
+
+6. **Мониторинг** (cAdvisor + Grafana)
+7. **Статья на Habr/VC** с этим таймингом
+8. **CI/CD для 1С-кода**
+
+---
+
+## 💡 Полезные ссылки
+
+- 📦 **1С:ИТС releases:** https://releases.1c.ru
+- 📚 **PostgreSQL docs:** https://postgrespro.ru/docs
+- 🐳 **Docker Desktop:** https://www.docker.com/products/docker-desktop
+- 📊 **Portainer docs:** https://docs.portainer.io
+- 🔒 **Tailscale:** https://tailscale.com
+- 🔐 **GitHub 2FA:** https://github.com/settings/security
+
+---
+
+## 👤 Автор и поддержка
+
+**Автор:** Vladimir Bessonov (bessonov_1989@list.ru)  
+**Репозиторий:** https://github.com/VladimirProgrammist1C/1c-infrastructure  
+**Лицензия:** MIT
+
+**Время развёртывания:** ~30 минут (при наличии дистрибутива PostgreSQL 1С)  
+**Последнее обновление:** 30 марта 2026  
+**Версия:** 2.0
+
+---
+
+> 💡 **Совет:** При возникновении проблем смотрите `docker-compose logs <service>` и проверяйте `docker-compose ps`

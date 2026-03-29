@@ -1,4 +1,3 @@
-
 # 🏠 1C Home Server Infrastructure
 
 Домашний сервер 1С на базе **Geekom A9 Max** (Ryzen AI 9 HX 370, 32 ГБ ОЗУ)
@@ -22,7 +21,7 @@
 
 ```powershell
 # 1. Клонировать репозиторий
-git clone https://github.com/USERNAME/1c-infrastructure.git
+git clone https://github.com/VladimirProgrammist1C/1c-infrastructure.git
 cd 1c-infrastructure
 
 # 2. Создать .env из шаблона
@@ -46,19 +45,36 @@ docker-compose up -d
 docker-compose ps
 ```
 
-<div style="page-break-before: always;"></div>
-
 ## 🔗 Доступ к сервисам
 
-| Сервис | URL | Логин | Пароль |
-|--------|-----|-------|--------|
-| **PostgreSQL** | `localhost:5432` | postgres | из `.env` |
-| **Portainer** | `http://localhost:9000` | admin | из `.env` |
-| **pgAdmin** | `http://localhost:5050` | admin@example.com | из `.env` |
+| Сервис | URL (локально) | URL (Tailscale) | Логин | Пароль |
+|--------|---------------|-----------------|-------|--------|
+| **PostgreSQL** | `localhost:5432` | `100.74.x.x:5432` | postgres | из `.env` |
+| **Portainer** | `http://localhost:9000` | `http://100.74.x.x:9000` | admin | из `.env` |
+| **pgAdmin** | `http://localhost:5050` | `http://100.74.x.x:5050` | admin@example.com | из `.env` |
+
+> 💡 **Tailscale IP:** Узнайте через `tailscale ip` на мини-ПК
+
+### 🔐 Доступ через Tailscale
+
+Порты настроены на `0.0.0.0` для безопасного доступа извне:
+
+```powershell
+# Узнать IP в сети Tailscale
+tailscale ip
+# Пример: 100.74.115.111
+
+# Доступ к сервисам из любой точки мира:
+# - Portainer: http://100.74.115.111:9000
+# - pgAdmin: http://100.74.115.111:5050
+# - PostgreSQL: 100.74.115.111:5432 (для 1С:Сервер)
+```
+
+> ⚠️ **Безопасно**, потому что Tailscale шифрует трафик (WireGuard) и доступ есть только у авторизованных устройств.
 
 ## ⚙️ Настройка Portainer
 
-1. Откройте `http://localhost:9000`
+1. Откройте `http://localhost:9000` (или через Tailscale)
 2. Создайте пользователя admin (пароль мин. 12 символов)
 3. Выберите **Docker Standalone** → **API**
 4. **Docker API URL:** `host.docker.internal:2375`
@@ -92,8 +108,6 @@ docker-compose ps
 
 **Если всё правильно** — появится зелёный кружок ✅ и сервер подключится!
 
-<div style="page-break-before: always;"></div>
-
 ## 🔧 Основные команды
 
 ```powershell
@@ -116,6 +130,9 @@ docker-compose exec postgres psql -U postgres -d template1c
 
 # Проверка версии PostgreSQL
 docker-compose exec postgres psql -U postgres -c "SELECT version();"
+
+# Проверка статуса
+docker-compose ps
 ```
 
 ## 📁 Структура проекта
@@ -127,6 +144,10 @@ docker-compose exec postgres psql -U postgres -c "SELECT version();"
 ├── .gitignore                # Исключения для Git
 ├── docker-compose.yml        # Оркестрация сервисов
 ├── README.md                 # Документация
+├── docs/
+│   ├── INFRASTRUCTURE-GUIDE.md  # Руководство по развёртыванию
+│   ├── TIMING.md                # Учёт времени
+│   └── SUMMARY.md               # Ретроспектива проекта
 └── docker/
     └── postgres-1c/
         ├── Dockerfile        # Инструкция сборки образа
@@ -134,14 +155,13 @@ docker-compose exec postgres psql -U postgres -c "SELECT version();"
         └── postgresql_*.tar.bz2  # Дистрибутив 1С (НЕ КОММИТИТЬ!)
 ```
 
-<div style="page-break-before: always;"></div>
-
 ## 🔐 Безопасность
 
 - ✅ Пароли хранятся в `.env` (добавлен в `.gitignore`)
 - ✅ Использованы именованные volumes (не bind mounts)
 - ✅ Healthcheck для PostgreSQL
-- ⚠️ TCP API без TLS (только для локальной разработки!)
+- ✅ Tailscale шифрует весь трафик (WireGuard)
+- ⚠️ TCP API без TLS (только для локальной разработки + Tailscale!)
 
 ### Для продакшена:
 
@@ -185,14 +205,30 @@ docker-compose up -d
 docker-compose up -d --force-recreate
 ```
 
-<div style="page-break-before: always;"></div>
+### Нет доступа через Tailscale
+
+```powershell
+# 1. Проверьте, что Tailscale запущен
+tailscale status
+
+# 2. Проверьте IP
+tailscale ip
+
+# 3. Проверьте порты
+netstat -an | findstr ":9000 :5050"
+# Должно быть: 0.0.0.0:9000, 0.0.0.0:5050
+
+# 4. Проверьте брандмауэр Windows
+# Разрешите порты 9000 и 5050 для входящих подключений
+```
 
 ## 📈 Планы развития
 
-- [ ] Настройка 1С:Сервер в Docker
-- [ ] Добавление 1С:Предприятие (веб-клиент)
-- [ ] Настройка резервного копирования
-- [ ] Мониторинг (Prometheus + Grafana)
+- [ ] Настройка 1С:Сервер на хосте (Windows)
+- [ ] Подключение 1С:Предприятие к PostgreSQL
+- [ ] Настройка резервного копирования (Обновлятор 1С)
+- [ ] Мониторинг (cAdvisor + Grafana)
+- [ ] Терминальный сервер в ВМ (Hyper-V) для удалённой разработки
 - [ ] CI/CD для 1С-кода
 
 ## 📄 Лицензия
@@ -206,44 +242,10 @@ Vladimir Bessonov (bessonov_1989@list.ru)
 ---
 
 **Время развёртывания:** ~30 минут  
-**Последнее обновление:** Март 2026
+**Последнее обновление:** 30 марта 2026  
+**Версия инфраструктуры:** 1.0
 
-<div style="page-break-before: always;"></div>
-
-## 🎯 Ближайшие шаги (рекомендую):
-
-### 1. Установите 1С:Предприятие на хост (Windows)
-
-```powershell
-# Скачайте с ИТС:
-# https://releases.1c.ru/project/Platform88
-# Файл: 1C_Enterprise_8.3.25.xxx.exe
-
-# Установите:
-# ✅ 1С:Предприятие (клиент)
-# ✅ 1С:Конфигуратор
-```
-
-### 2. Создайте базу 1С на PostgreSQL
-
-1. Запустите **1С:Конфигуратор**
-2. **Добавить** → **Создать новую информационную базу**
-3. Имя: `dev_1c_base`
-4. **На сервере 1С:Предприятия** (пока без сервера — просто файловая)
-5. **СУБД:** PostgreSQL
-6. **Сервер БД:** `localhost`
-7. **Имя БД:** `template1c`
-8. **Пользователь БД:** `postgres`
-9. **Пароль БД:** `ChangeMe123!`
-
-### 3. Проверьте подключение
-
-```sql
--- В pgAdmin выполните:
-SELECT datname FROM pg_database WHERE datname = 'template1c';
-
--- Должна вернуться ваша база
-```
+---
 
 ## 💡 Полезные ссылки
 
@@ -251,7 +253,4 @@ SELECT datname FROM pg_database WHERE datname = 'template1c';
 - 📚 **Документация PostgreSQL:** https://postgrespro.ru/docs
 - 🐳 **Docker Desktop:** https://www.docker.com/products/docker-desktop
 - 📊 **Portainer docs:** https://docs.portainer.io
-
----
-
-**Готово к работе!** 🎉
+- 🔐 **Tailscale:** https://tailscale.com

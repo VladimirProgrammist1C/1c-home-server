@@ -63,3 +63,6 @@ desktop.ini
 Dockerfile text eol=lf
 docker-compose.yml text eol=lf
 *.yml text eol=lf
+# PDF-версии документации
+README.pdf
+*.pdf
