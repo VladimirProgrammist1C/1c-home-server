@@ -1,0 +1,58 @@
+services:
+  postgres:
+    image: postgres:18.1-2.1C-ubuntu2204
+    container_name: postgres-1c
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-ChangeMe123!}
+      POSTGRES_DB: template1c
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - infra-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "8000:8000"
+    volumes:
+      - //./pipe/docker_engine:/var/run/docker.sock
+      - portainer-data:/data
+    networks:
+      - infra-net
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pgadmin4
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@example.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - infra-net
+    depends_on:
+      - postgres
+
+networks:
+  infra-net:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  portainer-data:
+  pgadmin-data:

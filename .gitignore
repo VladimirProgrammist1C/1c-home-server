@@ -29,6 +29,7 @@ AI/Ollama/logs/
 *.7z
 *.gguf
 *.bin
+*.tar.bz2
 
 # === ЛОГИ И ВРЕМЕННЫЕ ===
 *.log
@@ -55,3 +56,10 @@ BACKUPS/
 Thumbs.db
 .DS_Store
 desktop.ini
+
+* text=auto
+
+*.sh text eol=lf
+Dockerfile text eol=lf
+docker-compose.yml text eol=lf
+*.yml text eol=lf
