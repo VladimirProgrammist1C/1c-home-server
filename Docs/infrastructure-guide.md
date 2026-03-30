@@ -1,9 +1,9 @@
 # 🔧 Руководство по развёртыванию инфраструктуры 1С
 
-**Версия:** 2.1  
-**Дата:** 30 марта 2026  
+**Версия:** 2.2  
+**Дата:** 31 марта 2026  
 **Оборудование:** Geekom A9 Max (Ryzen AI 9 HX 370, 32 ГБ ОЗУ)  
-**Статус:** ✅ Инфраструктура СУБД + 1С:Предприятие готовы к работе
+**Статус:** ✅ Инфраструктура СУБД + 1С:Предприятие + Агент сервера 1С готовы к работе
 
 ---
 
@@ -13,17 +13,17 @@
 |------|--------|--------|------|
 | 1 | Docker-инфраструктура (PostgreSQL + Portainer + pgAdmin) | ✅ Готово | 27.03.2026 |
 | 2 | Git-репозиторий с документацией | ✅ Готово | 29.03.2026 |
-| 3 | README.md + PDF с page-breaks | ✅ Готово | 29.03.2026 |
+| 3 | README.md (без PDF) | ✅ Готово | 29.03.2026 |
 | 4 | TIMING.md (учёт времени) | ✅ Готово | 29.03.2026 |
 | 5 | SUMMARY.md (ретроспектива) | ✅ Готово | 30.03.2026 |
 | 6 | Tailscale VPN + удалённый доступ | ✅ Готово | 30.03.2026 |
 | 7 | docker-compose.yml (оркестрация) | ✅ Готово | 30.03.2026 |
-| 8 | GitHub 2FA (двухфакторная аутентификация) | ✅ Готово | 26.03.2026 |
+| 8 | GitHub 2FA (защита входа в Tailscale) | ✅ Готово | 26.03.2026 |
 | 9 | 1С:Предприятие на хосте | ✅ Готово | 30.03.2026 |
 | 10 | Подключение 1С к PostgreSQL в Docker | ✅ Готово | 30.03.2026 |
 | 11 | Первая база (DemoHRMCorpDemo_bot) | ✅ Готово | 30.03.2026 |
-| 12 | 1С:Сервер (агент) | ⏳ В плане | - |
-| 13 | Бэкапы PostgreSQL (Обновлятор 1С) | ⏳ В плане | - |
+| 12 | **Агент сервера 1С** | ✅ **Протестирован** | 31.03.2026 |
+| 13 | Бэкапы PostgreSQL (Обновлятор 1С) |  В плане | - |
 
 ---
 
@@ -38,11 +38,13 @@
 │  ✅ DOCKER-ИНФРАСТРУКТУРА (WSL2):                       │
 │  ├─ 🐳 PostgreSQL 18.1-2.1C :5432 (ru_RU.UTF-8)        │
 │  ├─ 🐳 Portainer         :9000                          │
-│  └─ 🐳 pgAdmin           :5050                          │
+│  └─  pgAdmin           :5050                          │
 │                                                         │
 │  ✅ 1С:ПРЕДПРИЯТИЕ (на хосте):                          │
-│  ├─ Платформа 8.5.11+ (Windows)                         │
+│  ├─ Платформа 8.5.1.1150 (Windows)                      │
 │  ├─ Прямое подключение к PostgreSQL                     │
+│  ├─ Агент сервера 1С запущен                            │
+│  │  └─ Порт: 1540/1541 (кластер)                        │
 │  └─ Лицензия: developer.1c.ru (привязана к железу)      │
 │                                                         │
 │  ✅ УДАЛЁННЫЙ ДОСТУП (Tailscale):                       │
@@ -51,10 +53,10 @@
 │  └─ Веб: 100.74.x.x:5050 (pgAdmin)                      │
 │                                                         │
 │  ✅ ДОКУМЕНТАЦИЯ:                                       │
-│  ├─ README.md + README.pdf                              │
+│  ├─ README.md                                           │
 │  ├─ docs/TIMING.md                                      │
 │  ├─ docs/SUMMARY.md                                     │
-│  └─ docs/INFRASTRUCTURE-GUIDE.md                        │
+│  ─ docs/INFRASTRUCTURE-GUIDE.md                        │
 │                                                         │
 └─────────────────────────────────────────────────────────┘
 ```
@@ -67,9 +69,9 @@
 E:\1C_Infrastructure\
 ├── .env                      # ✅ Пароли (НЕ КОММИТИТЬ!)
 ├── .env.example              # ✅ Шаблон
-├── .gitignore                # ✅ Исключения
+── .gitignore                # ✅ Исключения (*.pdf добавлен)
 ├── docker-compose.yml        # ✅ Оркестрация (PostgreSQL + Portainer + pgAdmin)
-├── README.md                 # ✅ Основная документация
+── README.md                 # ✅ Основная документация
 ├── docs/
 │   ├── INFRASTRUCTURE-GUIDE.md  # ✅ Это руководство
 │   ├── TIMING.md                # ✅ Детальный учёт времени
@@ -78,7 +80,7 @@ E:\1C_Infrastructure\
     └── postgres-1c/
         ├── Dockerfile            # ✅ Сборка образа PostgreSQL 1С
         ├── entrypoint.sh         # ✅ Инициализация БД
-        └── postgresql_*.tar.bz2  # ⚠️ Дистрибутив 1С (НЕ КОММИТИТЬ!)
+        └── postgresql_*.tar.bz2  # ️ Дистрибутив 1С (НЕ КОММИТИТЬ!)
 ```
 
 ---
@@ -160,7 +162,7 @@ netstat -an | findstr ":9000 :5050"
 5. **TLS:** выключено
 6. **Connect** ✅
 
-> ⚠️ **Важно:** В Docker Desktop должен быть включён TCP API:  
+> ️ **Важно:** В Docker Desktop должен быть включён TCP API:  
 > **Settings** → **General** → ✅ **Expose daemon on tcp://localhost:2375 without TLS**
 
 ### Шаг 9: Настроить pgAdmin
@@ -259,6 +261,67 @@ ALTER USER postgres WITH PASSWORD '123';
 
 ---
 
+## 🖥️ Агент сервера 1С - настройка и проверка
+
+### Установка Агента сервера 1С
+
+1. **Панель управления** → **Программы и компоненты**
+2. **1С:Предприятие 8** → **Изменить**
+3. Выбрать **"Изменить"** → **Далее**
+4. Отметить компоненты:
+   - ✅ **Сервер 1С:Предприятия 8**
+   - ✅ **Администрирование сервера 1С:Предприятия**
+5. **Далее** → **Установить**
+
+### Проверка службы
+
+```powershell
+# Проверить состояние службы
+Get-Service -Name "1C:Enterprise 8.5 Server Agent*" | 
+  Select-Object Name, Status, StartType
+
+# Ожидаемый результат:
+# Name                                     Status StartType
+# ----                                     ------ ---------
+# 1C:Enterprise 8.5 Server Agent (x86-64) Running Automatic
+```
+
+### Проверка портов
+
+```powershell
+# Проверить порты 1540/1541
+netstat -ano | findstr ":1540 :1541"
+
+# Ожидаемый результат:
+# TCP    0.0.0.0:1540    0.0.0.0:0    LISTENING
+# TCP    0.0.0.0:1541    0.0.0.0:0    LISTENING
+```
+
+### Консоль администрирования
+
+**Запуск:**
+```
+Пуск → 1С Предприятие 8 (x86-64) → Дополнительно → 
+Администрирование серверов 1С Предприятия x86-64
+```
+
+**Или через MMC:**
+```powershell
+mmc.exe "E:\DEV_LOCAL\INSTALLED\1cv8\8.5.1.1150\bin\rsadmin.dll"
+```
+
+### Проверка многопользовательского режима
+
+1. **Открыть базу в первом окне** (1С:Предприятие)
+2. **Открыть базу во втором окне** (другой пользователь)
+3. **Проверить в консоли кластера:**
+   - Локальный кластер → Сеансы
+   - Должно быть: 2 активных сеанса
+
+**✅ Успех:** Оба пользователя работают одновременно!
+
+---
+
 ## 🐳 Оркестрация: docker-compose
 
 ### Структура docker-compose.yml
@@ -317,6 +380,10 @@ docker-compose exec postgres psql -U postgres -c "SELECT pg_size_pretty(pg_datab
 
 # Проверить количество таблиц
 docker-compose exec postgres psql -U postgres -d "DemoHRMCorpDemo_bot" -c "SELECT COUNT(*) FROM pg_tables WHERE schemaname = 'public';"
+
+# Проверить Агент сервера 1С
+Get-Service -Name "1C:Enterprise*Server*" | Select-Object Name, Status
+netstat -ano | findstr ":1540 :1541"
 ```
 
 ---
@@ -365,12 +432,12 @@ docker-compose exec -T postgres pg_restore -U postgres -d "MyBase" /tmp/backup.d
 - [x] Именованные volumes (не bind mounts)
 - [x] Healthcheck для PostgreSQL
 - [x] Private GitHub репозиторий
-- [x] GitHub 2FA включена
+- [x] GitHub 2FA включена (защита входа в Tailscale)
 - [x] Tailscale VPN (шифрование WireGuard)
 - [x] Доступ только у авторизованных устройств
 - [x] Нет открытых портов в публичный интернет
 
-### ⚠️ Что нужно сделать:
+### ️ Что нужно сделать:
 
 - [ ] Настроить автоматические бэкапы БД (Обновлятор 1С)
 - [ ] Добавить мониторинг (cAdvisor/Grafana)
@@ -445,6 +512,26 @@ CREATE DATABASE "MyBase" WITH
 ALTER USER postgres WITH PASSWORD '123';
 ```
 
+### Агент сервера 1С не запускается
+
+```powershell
+# Проверить службу
+Get-Service -Name "1C:Enterprise*Server*"
+
+# Перезапустить
+Restart-Service "1C:Enterprise 8.5 Server Agent" -Force
+
+# Проверить логи
+Get-EventLog -LogName Application -Source "1C*" -Newest 20
+```
+
+### Консоль администрирования не открывается
+
+**Решение:** Переустановите компонент:
+1. Панель управления → Программы и компоненты
+2. 1С:Предприятие → Изменить
+3. Отметить "Администрирование сервера" → Далее
+
 ---
 
 ## 📈 Планы развития (приоритеты)
@@ -454,18 +541,15 @@ ALTER USER postgres WITH PASSWORD '123';
 - [x] ~~Установить 1С:Предприятие на хост~~ ✅ **Готово**
 - [x] ~~Подключить 1С к PostgreSQL~~ ✅ **Готово**
 - [x] ~~Создать первую информационную базу~~ ✅ **Готово**
+- [x] ~~Агент сервера 1С~~ ✅ **Протестирован**
 - [ ] Настроить Обновлятор 1С для бэкапов (~30 мин)
 
 ### ⚡ Средний приоритет (следующая неделя):
 
-- [ ] 1С:Сервер (агент) на хосте (~2-3 часа)
-  - ✅ **Лицензия developer.1c.ru поддерживает клиент-серверный режим (до 5 подключений)**
-  - ✅ **Лицензирование не изменилось** — платформа на хосте, СУБД в Docker не влияет
-  - Требуется, если: фоновые задания, несколько разработчиков, продвинутый мониторинг
 - [ ] Терминальный сервер в ВМ (Hyper-V + Windows 11 / Server) (~2 часа)
 - [ ] Мониторинг (cAdvisor + Grafana) (~1.5 часа)
 
-### 📝 Низкий приоритет (когда будет время):
+###  Низкий приоритет (когда будет время):
 
 - [ ] Статья на Habr/VC с этим таймингом
 - [ ] CI/CD для 1С-кода (GitLab CI/GitHub Actions)
@@ -475,12 +559,12 @@ ALTER USER postgres WITH PASSWORD '123';
 
 ## 💡 Полезные ссылки
 
-- 📦 [1С:ИТС releases](https://releases.1c.ru)
+-  [1С:ИТС releases](https://releases.1c.ru)
 - 📚 [PostgreSQL docs](https://postgrespro.ru/docs)
 - 🐳 [Docker Desktop](https://www.docker.com/products/docker-desktop)
-- 📊 [Portainer docs](https://docs.portainer.io)
+-  [Portainer docs](https://docs.portainer.io)
 - 🔒 [Tailscale](https://tailscale.com)
-- 🔐 [GitHub 2FA](https://github.com/settings/security)
+-  [GitHub 2FA](https://github.com/settings/security)
 - 🦙 [Ollama](https://ollama.com)
 
 ---
@@ -493,7 +577,7 @@ ALTER USER postgres WITH PASSWORD '123';
 **Лицензия:** MIT
 
 **Время развёртывания:** ~30 минут (при наличии дистрибутива PostgreSQL 1С)  
-**Последнее обновление:** 30 марта 2026  
-**Версия:** 2.1
+**Последнее обновление:** 31 марта 2026  
+**Версия:** 2.2
 
 > 💡 **Совет:** При возникновении проблем смотрите `docker-compose logs <service>` и проверяйте `docker-compose ps`
