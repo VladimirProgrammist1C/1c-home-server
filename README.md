@@ -1,21 +1,36 @@
 # 🏠 1C Home Server Infrastructure
 
-Домашний сервер 1С на базе **Geekom A9 Max** (Ryzen AI 9 HX 370, 32 ГБ ОЗУ)
+Домашний сервер 1С на базе Geekom A9 Max (Ryzen AI 9 HX 370, 32 ГБ ОЗУ, Windows 11 Pro)
+
+**Статус:** ✅ Инфраструктура СУБД готова к работе  
+**Версия:** 2.0  
+**Последнее обновление:** 30 марта 2026
+
+---
 
 ## 📦 Компоненты
 
-- **PostgreSQL 18.1-2.1C** (официальный дистрибутив 1С для 1С:Предприятие)
-- **Portainer CE 2.39.1** (управление Docker-контейнерами)
-- **pgAdmin 4** (веб-интерфейс для администрирования PostgreSQL)
+| Компонент | Версия | Назначение |
+|-----------|--------|------------|
+| **PostgreSQL** | 18.1-2.1C (Ubuntu 22.04) | СУБД для 1С:Предприятие |
+| **Portainer CE** | latest | Управление Docker-контейнерами |
+| **pgAdmin 4** | latest | Веб-интерфейс для PostgreSQL |
+| **Tailscale** | latest | VPN для безопасного удалённого доступа |
+| **1С:Предприятие** | 8.5.1.1150 | Платформа на хосте (Windows) |
+
+---
 
 ## 🚀 Быстрый старт
 
 ### Требования
 
-- Windows 10/11 Pro
-- Docker Desktop с WSL2
-- 32+ ГБ ОЗУ (рекомендуется 64 ГБ)
-- SSD 500+ ГБ
+| Требование | Значение |
+|------------|----------|
+| **ОС** | Windows 10/11 Pro |
+| **Docker** | Docker Desktop с WSL2 |
+| **ОЗУ** | 32+ ГБ (рекомендуется 64 ГБ) |
+| **SSD** | 500+ ГБ |
+| **Дистрибутив PostgreSQL 1С** | Скачать с ИТС |
 
 ### Установка
 
@@ -45,17 +60,21 @@ docker-compose up -d
 docker-compose ps
 ```
 
+---
+
 ## 🔗 Доступ к сервисам
 
 | Сервис | URL (локально) | URL (Tailscale) | Логин | Пароль |
-|--------|---------------|-----------------|-------|--------|
-| **PostgreSQL** | `localhost:5432` | `100.74.x.x:5432` | postgres | из `.env` |
-| **Portainer** | `http://localhost:9000` | `http://100.74.x.x:9000` | admin | из `.env` |
-| **pgAdmin** | `http://localhost:5050` | `http://100.74.x.x:5050` | admin@example.com | из `.env` |
+|--------|----------------|-----------------|-------|--------|
+| **PostgreSQL** | `localhost:5432` | `100.74.x.x:5432` | `postgres` | из `.env` |
+| **Portainer** | `http://localhost:9000` | `http://100.74.x.x:9000` | `admin` | из `.env` |
+| **pgAdmin** | `http://localhost:5050` | `http://100.74.x.x:5050` | `admin@example.com` | из `.env` |
 
 > 💡 **Tailscale IP:** Узнайте через `tailscale ip` на мини-ПК
 
-### 🔐 Доступ через Tailscale
+---
+
+## 🔐 Доступ через Tailscale
 
 Порты настроены на `0.0.0.0` для безопасного доступа извне:
 
@@ -72,31 +91,38 @@ tailscale ip
 
 > ⚠️ **Безопасно**, потому что Tailscale шифрует трафик (WireGuard) и доступ есть только у авторизованных устройств.
 
+---
+
 ## ⚙️ Настройка Portainer
 
 1. Откройте `http://localhost:9000` (или через Tailscale)
-2. Создайте пользователя admin (пароль мин. 12 символов)
+2. Создайте пользователя `admin` (пароль мин. 12 символов)
 3. Выберите **Docker Standalone** → **API**
 4. **Docker API URL:** `host.docker.internal:2375`
 5. **TLS:** выключено
 6. Нажмите **Connect**
 
 > ⚠️ **Важно:** В Docker Desktop должен быть включён TCP API (порт 2375):  
-> Settings → General → ✅ Expose daemon on tcp://localhost:2375 without TLS
+> **Settings** → **General** → ✅ **Expose daemon on tcp://localhost:2375 without TLS**
+
+---
 
 ## 📊 Настройка pgAdmin
 
 ### Добавление сервера PostgreSQL:
 
 1. Откройте `http://localhost:5050`
-2. Войдите (admin@example.com / пароль из `.env`)
-3. **Правый клик на Servers** → **Register** → **Server**
-4. **Вкладка General:**
-   - Name: `PostgreSQL 1C`
-5. **Вкладка Connection:**
+2. Войдите (`admin@example.com` / пароль из `.env`)
+3. Правый клик на **Servers** → **Register** → **Server**
 
+**Вкладка General:**
+| Поле | Значение |
+|------|----------|
+| **Name** | `PostgreSQL 1C` |
+
+**Вкладка Connection:**
 | Поле | Значение | Важно! |
-|------|----------|--------|
+|------|----------|---------|
 | **Host name/address** | `postgres` | ← Имя сервиса из docker-compose.yml! |
 | **Port** | `5432` | |
 | **Maintenance database** | `template1c` | Или `postgres` |
@@ -104,9 +130,54 @@ tailscale ip
 | **Password** | (из `.env`) | Обычно `ChangeMe123!` |
 | **Save password?** | ✅ Поставьте галочку | |
 
-6. Нажмите **Save**
+4. Нажмите **Save**
 
-**Если всё правильно** — появится зелёный кружок ✅ и сервер подключится!
+> ✅ Если всё правильно — появится зелёный кружок и сервер подключится!
+
+---
+
+## 📁 Создание базы данных для 1С с русской локалью
+
+```powershell
+# 1. Войти в psql
+docker-compose exec postgres psql -U postgres
+
+# 2. Создать базу с русской локалью (ВАЖНО!)
+CREATE DATABASE "DemoHRMCorpDemo_bot" WITH 
+  LC_COLLATE='ru_RU.UTF-8' 
+  LC_CTYPE='ru_RU.UTF-8' 
+  TEMPLATE=template0 
+  ENCODING='UTF8';
+
+# 3. Проверить локаль
+SELECT datname, datcollate, datctype FROM pg_database 
+WHERE datname = 'DemoHRMCorpDemo_bot';
+
+# 4. Изменить пароль (если нужно)
+ALTER USER postgres WITH PASSWORD '123';
+
+# 5. Выйти
+\q
+```
+
+---
+
+## 🔧 Подключение 1С:Предприятие
+
+### В Консоли администрирования 1С:
+
+| Поле | Значение |
+|------|----------|
+| **Имя** | `DemoHRMCorpDemo_bot` |
+| **Сервер баз данных** | `localhost` |
+| **Тип СУБД** | `PostgreSQL` |
+| **База данных** | `DemoHRMCorpDemo_bot` |
+| **Пользователь сервера БД** | `postgres` |
+| **Пароль сервера БД** | `123` (или из `.env`) |
+| **Язык (Страна)** | `русский (Россия)` ✅ |
+| **✓ Создать базу данных...** | `☐` **НЕ СТАВЬТЕ!** |
+
+---
 
 ## 🔧 Основные команды
 
@@ -133,7 +204,20 @@ docker-compose exec postgres psql -U postgres -c "SELECT version();"
 
 # Проверка статуса
 docker-compose ps
+
+# Проверка локали базы
+docker-compose exec postgres psql -U postgres -c "SELECT datname, datcollate, datctype FROM pg_database;"
+
+# Создать бэкап
+docker-compose exec postgres pg_dump -U postgres -d "MyBase" -F c -f /tmp/backup.dump
+docker-compose cp postgres:/tmp/backup.dump .\backup.dump
+
+# Восстановить из бэкапа
+docker cp .\backup.dump postgres-1c:/tmp/backup.dump
+docker-compose exec -T postgres pg_restore -U postgres -d "MyBase" /tmp/backup.dump
 ```
+
+---
 
 ## 📁 Структура проекта
 
@@ -155,24 +239,25 @@ docker-compose ps
         └── postgresql_*.tar.bz2  # Дистрибутив 1С (НЕ КОММИТИТЬ!)
 ```
 
+---
+
 ## 🔐 Безопасность
 
-- ✅ Пароли хранятся в `.env` (добавлен в `.gitignore`)
-- ✅ Использованы именованные volumes (не bind mounts)
-- ✅ Healthcheck для PostgreSQL
-- ✅ Tailscale шифрует весь трафик (WireGuard)
-- ⚠️ TCP API без TLS (только для локальной разработки + Tailscale!)
+### ✅ Что сделано:
 
-### Для продакшена:
+- [x] Пароли хранятся в `.env` (добавлен в `.gitignore`)
+- [x] Использованы именованные volumes (не bind mounts)
+- [x] Healthcheck для PostgreSQL
+- [x] Tailscale шифрует весь трафик (WireGuard)
+- [x] GitHub 2FA включена
+- [x] Private репозиторий
 
-```yaml
-# docker-compose.yml
-services:
-  postgres:
-    environment:
-      POSTGRES_PASSWORD: ${DB_PASSWORD}  # Из .env
-    # Добавить SSL сертификаты
-```
+### ⚠️ Важно:
+
+- TCP API без TLS (только для локальной разработки + Tailscale!)
+- Не используйте `0.0.0.0` без VPN!
+
+---
 
 ## 🛠️ Устранение проблем
 
@@ -222,35 +307,72 @@ netstat -an | findstr ":9000 :5050"
 # Разрешите порты 9000 и 5050 для входящих подключений
 ```
 
-## 📈 Планы развития
+### Ошибка "Порядок сортировки не поддерживается базой данных"
 
-- [ ] Настройка 1С:Сервер на хосте (Windows)
-- [ ] Подключение 1С:Предприятие к PostgreSQL
-- [ ] Настройка резервного копирования (Обновлятор 1С)
-- [ ] Мониторинг (cAdvisor + Grafana)
-- [ ] Терминальный сервер в ВМ (Hyper-V) для удалённой разработки
-- [ ] CI/CD для 1С-кода
+**Решение:** Создавайте базу с русской локалью:
 
-## 📄 Лицензия
-
-MIT
-
-## 👤 Автор
-
-Vladimir Bessonov (bessonov_1989@list.ru)
+```sql
+CREATE DATABASE "MyBase" WITH 
+  LC_COLLATE='ru_RU.UTF-8' 
+  LC_CTYPE='ru_RU.UTF-8' 
+  TEMPLATE=template0 
+  ENCODING='UTF8';
+```
 
 ---
 
-**Время развёртывания:** ~30 минут  
+## 📈 Планы развития
+
+### 🔥 Высокий приоритет (эта неделя):
+
+- [x] ~~Установить 1С:Предприятие на хост~~ ✅ **Готово**
+- [x] ~~Подключить 1С к PostgreSQL~~ ✅ **Готово**
+- [x] ~~Создать первую информационную базу~~ ✅ **Готово**
+- [ ] Настроить Обновлятор 1С для бэкапов (~30 мин)
+
+### ⚡ Средний приоритет (следующая неделя):
+
+- [ ] 1С:Сервер (агент) на хосте (~2-3 часа)
+  - ✅ **Лицензия developer.1c.ru поддерживает клиент-серверный режим (до 5 подключений)**
+  - ✅ **Лицензирование не изменилось** — платформа на хосте, СУБД в Docker не влияет
+  - Требуется, если: фоновые задания, несколько разработчиков, продвинутый мониторинг
+- [ ] Терминальный сервер в ВМ (Hyper-V + Windows 11) (~2 часа)
+- [ ] Мониторинг (cAdvisor + Grafana) (~1.5 часа)
+
+### 📝 Низкий приоритет (когда будет время):
+
+- [ ] Статья на Habr/VC с этим таймингом
+- [ ] CI/CD для 1С-кода (GitLab CI/GitHub Actions)
+- [ ] Резервное копирование в облако
+
+---
+
+## 📄 Лицензия
+
+**MIT**
+
+---
+
+## 👤 Автор
+
+**Vladimir Bessonov**  
+📧 bessonov_1989@list.ru  
+🔗 https://github.com/VladimirProgrammist1C/1c-infrastructure
+
+---
+
+**Время развёртывания:** ~30 минут (при наличии дистрибутива PostgreSQL 1С)  
 **Последнее обновление:** 30 марта 2026  
-**Версия инфраструктуры:** 1.0
+**Версия инфраструктуры:** 2.0
 
 ---
 
 ## 💡 Полезные ссылки
 
-- 📦 **1С:ИТС releases:** https://releases.1c.ru
-- 📚 **Документация PostgreSQL:** https://postgrespro.ru/docs
-- 🐳 **Docker Desktop:** https://www.docker.com/products/docker-desktop
-- 📊 **Portainer docs:** https://docs.portainer.io
-- 🔐 **Tailscale:** https://tailscale.com
+- 📦 [1С:ИТС releases](https://releases.1c.ru)
+- 📚 [Документация PostgreSQL](https://postgrespro.ru/docs)
+- 🐳 [Docker Desktop](https://www.docker.com/products/docker-desktop)
+- 📊 [Portainer docs](https://docs.portainer.io)
+- 🔐 [Tailscale](https://tailscale.com)
+- 🔐 [GitHub 2FA](https://github.com/settings/security)
+- 🦙 [Ollama](https://ollama.com)

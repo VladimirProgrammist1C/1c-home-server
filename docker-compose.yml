@@ -5,8 +5,13 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-ChangeMe123!}
+      POSTGRES_PASSWORD: "123"
       POSTGRES_DB: template1c
+      # Русская локаль:
+      LANG: ru_RU.UTF-8
+      LC_ALL: ru_RU.UTF-8
+      LC_COLLATE: ru_RU.UTF-8
+      LC_CTYPE: ru_RU.UTF-8    
     ports:
       - "5432:5432"
     volumes:
@@ -18,6 +23,15 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    # Добавить в КОНЕЦ секции postgres (на одном уровне с image, container_name и т.д.):
+    command: >
+      postgres
+      -c lc_collate=ru_RU.UTF-8
+      -c lc_ctype=ru_RU.UTF-8
+      -c lc_messages=ru_RU.UTF-8
+      -c lc_monetary=ru_RU.UTF-8
+      -c lc_numeric=ru_RU.UTF-8
+      -c lc_time=ru_RU.UTF-8
 
   portainer:
     image: portainer/portainer-ce:latest
