@@ -51,9 +51,9 @@ docker-compose ps
 
 | Файл | Назначение |
 |------|-----------|
-| 📖 [`docs/INFRASTRUCTURE-GUIDE.md`](docs/INFRASTRUCTURE-GUIDE.md) | Полное руководство по развёртыванию |
-| ⏱️ [`docs/TIMING.md`](docs/TIMING.md) | Детальный учёт времени |
-| 📋 [`docs/SUMMARY.md`](docs/SUMMARY.md) | Ретроспектива проекта |
+| 📖 [`Docs/INFRASTRUCTURE-GUIDE.md`](Docs/INFRASTRUCTURE-GUIDE.md) | Полное руководство по развёртыванию |
+| ⏱️ [`Docs/TIMING.md`](Docs/TIMING.md) | Детальный учёт времени |
+| 📋 [`Docs/SUMMARY.md`](Docs/SUMMARY.md) | Ретроспектива проекта |
 
 ---
 
