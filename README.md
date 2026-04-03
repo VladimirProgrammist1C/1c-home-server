@@ -1,23 +1,55 @@
-# 🏠 1C Home Server Infrastructure
+# 🏠 1C Infrastructure
 
-**Домашний сервер 1С на базе Geekom A9 Max** (Ryzen AI 9 HX 370, 32 ГБ ОЗУ, Windows 11 Pro)
+Домашний сервер для 1С-разработки и тестирования на базе **Geekom A9 Max** (Ryzen AI 9 HX 370, Windows 11 Pro).
 
-| Статус | Версия | Обновлено |
-|--------|--------|-----------|
-| ✅ СУБД + 1С:Предприятие + Агент сервера 1С + Обновлятор готовы | 2.3 | 01.04.2026 |
+> **Цель:** Создание изолированной среды для 1С-разработки с приближением к продакшену.
 
 ---
 
-## 🚀 Быстрый старт (30 секунд)
+## 🧩 Компоненты
+
+### Основные сервисы
+
+| Сервис | Назначение | Порт |
+|--------|------------|------|
+| PostgreSQL | СУБД для 1С:Предприятие | 5432 |
+| pgAdmin | Веб-интерфейс PostgreSQL | 5050 |
+| 1С:Предприятие | Сервер 1С (dev / test / prod) | — |
+
+### Инфраструктура и мониторинг
+
+| Сервис | Назначение | Порт |
+|--------|------------|------|
+| Portainer | Управление Docker-контейнерами | 9000 |
+| Grafana | Дашборды и алерты | 3002 |
+| Prometheus | Сбор и хранение метрик | 9090 |
+| cAdvisor | Мониторинг ресурсов контейнеров | 8080 |
+| Blackbox Exporter | HTTP-проверки доступности | 9115 |
+| postgres-exporter | Метрики PostgreSQL | 9187 |
+| VoceChat | Уведомления об инцидентах | 3001 |
+
+---
+
+## 📚 Документация
+
+| Файл | Описание |
+|------|----------|
+| [`infrastructure-guide.md`](infrastructure-guide.md) | 📘 Подробное руководство по развёртыванию и настройке |
+| [`COMMANDS.md`](COMMANDS.md) | ⚡ Шпаргалка с основными командами управления |
+| [`TIMING.md`](TIMING.md) | ⏱️ Хронология работ и принятых решений |
+| [`SUMMARY.md`](SUMMARY.md) | 📋 Краткое резюме проекта |
+
+---
+
+## 🚀 Быстрый старт
 
 ```powershell
 # 1. Клонировать репозиторий
-git clone https://github.com/VladimirProgrammist1C/1c-infrastructure.git
-cd 1c-infrastructure
+git clone <repository-url>
+cd 1C_Infrastructure
 
 # 2. Настроить переменные окружения
-Copy-Item .env.example .env
-code .env  # заполнить пароли
+#    (отредактируйте .env, установите пароли)
 
 # 3. Запустить все сервисы
 docker-compose up -d
@@ -26,134 +58,56 @@ docker-compose up -d
 docker-compose ps
 ```
 
-> ⚠️ **Первый запуск:** Скачать PostgreSQL 1С с [ИТС](https://releases.1c.ru) и собрать образ:
-> ```powershell
-> docker build -t postgres:18.1-2.1C-ubuntu2204 ./docker/postgres-1c --no-cache
-> ```
+> Все команды и сценарии использования — в [`COMMANDS.md`](COMMANDS.md)
 
 ---
 
-## 🔗 Доступ к сервисам
+## 📊 Мониторинг
 
-| Сервис | Локально | Tailscale | Логин | Пароль |
-|--------|----------|-----------|-------|--------|
-| **PostgreSQL** | `localhost:5432` | `100.74.x.x:5432` | `postgres` | из `.env` |
-| **Portainer** | `http://localhost:9000` | `http://100.74.x.x:9000` | `admin` | из `.env` |
-| **pgAdmin** | `http://localhost:5050` | `http://100.74.x.x:5050` | `admin@example.com` | из `.env` |
-| **Агент сервера 1С** | `localhost` | — | — | — |
+Система автоматически отслеживает:
 
-> 💡 **Tailscale IP:** `tailscale ip` на мини-ПК  
-> ⚠️ **Порты 1540/1541** — внутренние (кластер), клиент 1С подключается просто к `localhost`
+- 🔴 **Доступность сервисов:** PostgreSQL, Grafana, pgAdmin, Portainer, VoceChat
+- 🟡 **Ресурсы:** CPU, RAM контейнеров
+- 🔔 **Уведомления:** отправляются в локальный чат VoceChat
 
----
+**Полезные ссылки:**
 
-## 📚 Документация
+- Графана: http://localhost:3002
+- Prometheus: http://localhost:9090
+- Алерты: http://localhost:3002/alerting/list
 
-| Файл | Назначение |
-|------|------------|
-| 📖 [Docs/infrastructure-guide.md](Docs/infrastructure-guide.md) | Полное руководство по развёртыванию |
-| ⏱️ [Docs/TIMING.md](Docs/TIMING.md) | Детальный учёт времени |
-| 📋 [Docs/SUMMARY.md](Docs/SUMMARY.md) | Ретроспектива проекта |
-
----
-
-## 🔧 Основные команды
-
-```powershell
-# Статус и логи
-docker-compose ps
-docker-compose logs postgres --tail 20
-
-# Перезапуск / остановка
-docker-compose restart postgres
-docker-compose down
-
-# Подключение к PostgreSQL
-docker-compose exec postgres psql -U postgres -d template1c
-
-# Бэкап / восстановление
-docker-compose exec postgres pg_dump -U postgres -d "MyBase" -F c -f /tmp/backup.dump
-docker-compose cp postgres:/tmp/backup.dump .\backup.dump
-
-# Проверка агента сервера 1С
-Get-Service -Name "1C:Enterprise*Server*"
-netstat -ano | findstr ":1540 :1541"
-```
-
----
-
-## 📦 Компоненты
-
-| Компонент | Версия | Статус | Назначение |
-|-----------|--------|--------|------------|
-| PostgreSQL | 18.1-2.1C | ✅ Работает | СУБД для 1С:Предприятие |
-| Portainer | latest | ✅ Работает | Управление Docker |
-| pgAdmin | latest | ✅ Работает | Администрирование PostgreSQL |
-| Tailscale | latest | ✅ Настроено | VPN для удалённого доступа |
-| 1С:Предприятие | 8.5.1.1150 | ✅ Работает | Платформа на хосте (Windows) |
-| Агент сервера 1С | 8.5.1.1150 | ✅ Протестирован | Клиент-серверный режим, многопользовательский доступ |
-| Обновлятор 1С | 24.02.2026 | ✅ Работает | Автоматические бэкапы баз (~1 ГБ/мин) |
-
----
-
-## ✅ Что работает
-
-### Инфраструктура:
-- ✅ PostgreSQL в Docker с русской локалью (`ru_RU.UTF-8`)
-- ✅ Portainer для управления контейнерами
-- ✅ pgAdmin для администрирования БД
-- ✅ Tailscale VPN (шифрование WireGuard)
-
-### 1С:Предприятие:
-- ✅ Платформа на хосте (Windows 11 Pro)
-- ✅ Подключение к PostgreSQL в Docker
-- ✅ База `DemoHRMCorpDemo_bot` (2226 MB, 10,378 таблиц)
-- ✅ Лицензия developer.1c.ru (привязана к железу)
-
-### Агент сервера 1С:
-- ✅ Служба запущена (порт 1540/1541)
-- ✅ Консоль администрирования работает
-- ✅ Многопользовательский режим (несколько сеансов одновременно)
-- ✅ Конфигуратор + Предприятие параллельно
-
-### Обновлятор 1С (бэкапы):
-- ✅ GUI-приложение от Владимира Милькина (helpme1s.ru)
-- ✅ Подключение к PostgreSQL через pgAdmin runtime
-- ✅ Автоматическое архивирование баз (1009.92 МБ за 1 мин 18 сек)
-- ✅ Путь к бэкапам: `E:\DEV_LOCAL\Updater_backups\`
-- ✅ Хранение 2 последних копий
+Детали настройки мониторинга — в [`infrastructure-guide.md`](infrastructure-guide.md)
 
 ---
 
 ## 🔐 Безопасность
 
-- ✅ Пароли в `.env` (добавлен в `.gitignore`)
-- ✅ Tailscale шифрует трафик (WireGuard)
-- ✅ GitHub 2FA включена
-- ⚠️ Порты `0.0.0.0` — **не использовать без VPN!**
+- Все пароли хранятся в `.env` — **не коммитьте этот файл!**
+- Сервисы доступны только на `localhost`
+- Для внешнего доступа используйте VPN
 
 ---
 
-## 📈 Планы развития
+## 📁 Структура проекта
 
-### 🔥 Высокий приоритет:
-- [x] Обновлятор 1С для автоматических бэкапов ✅ **Готово**
-
-### ⚡ Средний приоритет:
-- [ ] Терминальный сервер в ВМ (Hyper-V + Windows 11/Server) (~2 часа)
-- [ ] Мониторинг (cAdvisor + Grafana) (~1.5 часа)
-
-### 📝 Низкий приоритет:
-- [ ] Статья на Habr/VC с таймингом
-- [ ] CI/CD для 1С-кода
-- [ ] Резервное копирование в облако
+```
+1C_Infrastructure/
+├── docker-compose.yml          # Конфигурация Docker
+├── .env                        # Переменные окружения (игнорируется Git)
+├── README.md                   # Этот файл
+├── infrastructure-guide.md     # Подробное руководство
+├── COMMANDS.md                 # Шпаргалка по командам
+├── TIMING.md                   # Хронология работ
+├── SUMMARY.md                  # Краткое резюме
+├── monitoring/
+│   ├── prometheus.yml          # Настройки Prometheus
+│   └── blackbox.yml            # Настройки Blackbox Exporter
+└── grafana/
+    └── provisioning/           # Автоконфигурация дашбордов и алертов
+```
 
 ---
 
-## 👤 Автор
+## 📝 Лицензия
 
-**Vladimir Bessonov**  
-📧 bessonov_1989@list.ru  
-🔗 https://github.com/VladimirProgrammist1C/1c-infrastructure
-
-**Лицензия:** MIT | **Время развёртывания:** ~30 минут
+MIT License

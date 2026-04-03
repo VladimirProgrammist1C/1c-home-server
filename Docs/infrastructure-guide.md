@@ -1,809 +1,491 @@
-# 🔧 Руководство по развёртыванию инфраструктуры 1С
+# 📘 1C Infrastructure - Подробное руководство
 
-**Версия:** 2.3  
-**Дата:** 01 апреля 2026  
-**Оборудование:** Geekom A9 Max (Ryzen AI 9 HX 370, 32 ГБ ОЗУ)  
-**Статус:** ✅ Инфраструктура СУБД + 1С:Предприятие + Агент сервера 1С + Обновлятор готовы к работе
+Полное руководство по развёртыванию и настройке инфраструктуры для 1С-разработки.
 
 ---
 
-## 📊 Что РЕАЛЬНО сделано (актуальный статус)
+## 📋 Содержание
 
-| Этап | Задача | Статус | Дата |
-|------|--------|--------|------|
-| 1 | Docker-инфраструктура (PostgreSQL + Portainer + pgAdmin) | ✅ Готово | 27.03.2026 |
-| 2 | Git-репозиторий с документацией | ✅ Готово | 29.03.2026 |
-| 3 | README.md + документация | ✅ Готово | 29.03.2026 |
-| 4 | TIMING.md (учёт времени) | ✅ Готово | 29.03.2026 |
-| 5 | SUMMARY.md (ретроспектива) | ✅ Готово | 30.03.2026 |
-| 6 | Tailscale VPN + удалённый доступ | ✅ Готово | 30.03.2026 |
-| 7 | docker-compose.yml (оркестрация) | ✅ Готово | 30.03.2026 |
-| 8 | GitHub 2FA (двухфакторная аутентификация) | ✅ Готово | 26.03.2026 |
-| 9 | 1С:Предприятие на хосте | ✅ Готово | 30.03.2026 |
-| 10 | Подключение 1С к PostgreSQL в Docker | ✅ Готово | 30.03.2026 |
-| 11 | Первая база (DemoHRMCorpDemo_bot) | ✅ Готово | 30.03.2026 |
-| 12 | Агент сервера 1С | ✅ Готово | 31.03.2026 |
-| 13 | Обновлятор 1С (бэкапы) | ✅ Готово | 01.04.2026 |
+1. [Введение](#введение)
+2. [Требования](#требования)
+3. [Установка](#установка)
+4. [Настройка](#настройка)
+5. [Мониторинг](#мониторинг)
+6. [Управление сервисами](#управление-сервисами)
+7. [Диагностика](#диагностика)
+8. [Часто задаваемые вопросы](#часто-задаваемые-вопросы)
 
 ---
 
-## 🏗️ Текущая архитектура
+## 🎯 Введение
 
-```
-┌─────────────────────────────────────────────────────────┐
-│  🪟 Windows 11 Pro (Geekom A9 Max)                      │
-│  IP: 192.168.0.136 | Tailscale: 100.74.x.x              │
-├─────────────────────────────────────────────────────────┤
-│                                                         │
-│  ✅ DOCKER-ИНФРАСТРУКТУРА (WSL2):                       │
-│  ├─ 🐳 PostgreSQL 18.1-2.1C :5432 (ru_RU.UTF-8)        │
-│  ├─ 🐳 Portainer         :9000                          │
-│  └─ 🐳 pgAdmin           :5050                          │
-│                                                         │
-│  ✅ 1С:ПРЕДПРИЯТИЕ (на хосте):                          │
-│  ├─ Платформа 8.5.1.1150 (Windows)                      │
-│  ├─ Прямое подключение к PostgreSQL                     │
-│  ├─ Агент сервера 1С (порт 1540/1541)                   │
-│  └─ Лицензия: developer.1c.ru (привязана к железу)      │
-│                                                         │
-│  ✅ ОБНОВЛЯТОР 1С (на хосте):                           │
-│  ├─ GUI-приложение от Владимира Милькина                │
-│  ├─ Бэкапы: E:\DEV_LOCAL\Updater_backups\               │
-│  ├─ Скорость: ~1 ГБ/мин (1009.92 МБ за 1 мин 18 сек)    │
-│  └─ Хранение: 2 последние копии                         │
-│                                                         │
-│  ✅ УДАЛЁННЫЙ ДОСТУП (Tailscale):                       │
-│  ├─ RDP → хост (основной сценарий)                      │
-│  ├─ Веб: 100.74.x.x:9000 (Portainer)                    │
-│  └─ Веб: 100.74.x.x:5050 (pgAdmin)                      │
-│                                                         │
-│  ✅ ДОКУМЕНТАЦИЯ:                                       │
-│  ├─ README.md                                           │
-│  ├─ Docs/TIMING.md                                      │
-│  ├─ Docs/SUMMARY.md                                     │
-│  └─ Docs/INFRASTRUCTURE-GUIDE.md                        │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
-```
+Эта инфраструктура предназначена для:
+- ✅ Изолированной разработки и тестирования 1С
+- ✅ Приближения к продакшен-среде
+- ✅ Автоматического мониторинга и уведомлений
+- ✅ Упрощения развёртывания через Docker Compose
+
+**Основное оборудование:** Geekom A9 Max (Ryzen AI 9 HX 370, Windows 11 Pro)
 
 ---
 
-## 📁 Структура проекта (актуальная)
+## 💻 Требования
 
-```
-E:\1C_Infrastructure\
-├── .env                      # ✅ Пароли (НЕ КОММИТИТЬ!)
-├── .env.example              # ✅ Шаблон
-├── .gitignore                # ✅ Исключения
-├── docker-compose.yml        # ✅ Оркестрация (PostgreSQL + Portainer + pgAdmin)
-├── README.md                 # ✅ Основная документация
-├── Docs/
-│   ├── INFRASTRUCTURE-GUIDE.md  # ✅ Это руководство
-│   ├── TIMING.md                # ✅ Детальный учёт времени
-│   └── SUMMARY.md               # ✅ Ретроспектива проекта
-└── docker/
-    └── postgres-1c/
-        ├── Dockerfile            # ✅ Сборка образа PostgreSQL 1С
-        ├── entrypoint.sh         # ✅ Инициализация БД с русской локалью
-        └── postgresql_*.tar.bz2  # ⚠️ Дистрибутив 1С (НЕ КОММИТИТЬ!)
-```
+### Аппаратные
+
+- **CPU:** 8+ ядер (рекомендуется 12+)
+- **RAM:** 32+ ГБ (рекомендуется 64 ГБ)
+- **Disk:** 500+ ГБ SSD
+- **OS:** Windows 11 Pro / Windows 10 Pro
+
+### Программные
+
+- **Docker Desktop** (последняя версия)
+- **Git** (для клонирования репозитория)
+- **PowerShell** (встроен в Windows)
 
 ---
 
-## 🚀 Как развёрнуть (инструкция для нового места)
+## 🚀 Установка
 
-### Шаг 1: Клонировать репозиторий
+### Шаг 1: Установка Docker Desktop
 
-```powershell
-git clone https://github.com/VladimirProgrammist1C/1c-infrastructure.git
-cd E:\1C_Infrastructure
-```
+1. Скачайте с [официального сайта](https://www.docker.com/products/docker-desktop)
+2. Установите с настройками по умолчанию
+3. Перезагрузите компьютер
+4. Запустите Docker Desktop
 
-### Шаг 2: Настроить переменные окружения
-
-```powershell
-Copy-Item .env.example .env
-code .env  # Заполнить пароли
-```
-
-### Шаг 3: Скачать PostgreSQL 1С
+### Шаг 2: Клонирование репозитория
 
 ```powershell
-# С ИТС: https://releases.1c.ru/project/Platform88
-# Файл: postgresql_18.1_2_ubuntu_22.04_x86_64_package.tar.bz2
-# Разместить в: .\docker\postgres-1c\
+# Создайте папку для проекта
+mkdir C:\1C_Infrastructure
+cd C:\1C_Infrastructure
+
+# Клонируйте репозиторий
+git clone <repository-url> .
 ```
 
-### Шаг 4: Собрать образ
+### Шаг 3: Настройка переменных окружения
 
 ```powershell
-docker build -t postgres:18.1-2.1C-ubuntu2204 .\docker\postgres-1c\ --no-cache
+# Скопируйте пример
+copy .env.example .env
+
+# Отредактируйте .env
+notepad .env
 ```
 
-### Шаг 5: Запустить сервисы
-
-```powershell
-docker-compose up -d
-```
-
-### Шаг 6: Проверить
-
-```powershell
-docker-compose ps
-# Должно быть:
-# postgres-1c   Up (healthy)
-# portainer     Up
-# pgadmin4      Up
-```
-
-### Шаг 7: Настроить Tailscale (удалённый доступ)
-
-```powershell
-# Установить Tailscale
-winget install Tailscale.Tailscale
-
-# Авторизоваться
-tailscale up
-
-# Узнать IP
-tailscale ip
-# Пример: 100.74.115.111
-
-# Проверить доступность портов
-netstat -an | findstr ":9000 :5050"
-# Должно быть: 0.0.0.0:9000, 0.0.0.0:5050
-```
-
-**Доступ через Tailscale:**
-- Portainer: `http://100.74.x.x:9000`
-- pgAdmin: `http://100.74.x.x:5050`
-
-### Шаг 8: Настроить Portainer (первый вход)
-
-1. Открыть: `http://localhost:9000` (или через Tailscale)
-2. Создать пользователя `admin` (пароль ≥12 символов)
-3. Выбрать: **Docker Standalone** → **API**
-4. **Docker API URL:** `host.docker.internal:2375`
-5. **TLS:** выключено
-6. **Connect** ✅
-
-> ⚠️ **Важно:** В Docker Desktop должен быть включён TCP API:  
-> **Settings** → **General** → ✅ **Expose daemon on tcp://localhost:2375 without TLS**
-
-### Шаг 9: Настроить pgAdmin
-
-1. Открыть: `http://localhost:5050`
-2. Войти: `admin@example.com` / пароль из `.env`
-3. **Servers** → **Register** → **Server**
-
-**Вкладка General:**
-| Поле | Значение |
-|------|----------|
-| **Name** | `PostgreSQL 1C` |
-
-**Вкладка Connection:**
-| Поле | Значение | Важно! |
-|------|----------|--------|
-| **Host name/address** | `postgres` | ← Имя сервиса из docker-compose! |
-| **Port** | `5432` | |
-| **Maintenance database** | `template1c` | Или `postgres` |
-| **Username** | `postgres` | |
-| **Password** | из `.env` | Обычно `ChangeMe123!` |
-| **Save password?** | ✅ Поставьте галочку | |
-
-4. **Save** ✅
-
----
-
-## ⚠️ Важно о локали PostgreSQL для 1С
-
-**Критично:** Для работы 1С:Предприятие с PostgreSQL **требуется русская локаль** (`ru_RU.UTF-8`) в кластере PostgreSQL. Без этого базы не создадутся ни через консоль администрирования, ни через ярлык, ни через Обновлятор!
-
-### Почему это важно?
-
-| Способ создания базы | Требуется ли русская локаль в кластере? |
-|---------------------|----------------------------------------|
-| Консоль администрирования 1С | ✅ **ДА** (иначе ошибка при создании) |
-| Ярлык "Добавить базу" | ✅ **ДА** (иначе ошибка при создании) |
-| Обновлятор 1С | ✅ **ДА** (иначе ошибка при создании) |
-| Ручное создание через SQL | ✅ **ДА** (с `TEMPLATE=template0`) |
-
-### Решение: Настройка `entrypoint.sh`
-
-Добавьте русскую локаль в `docker/postgres-1c/entrypoint.sh`:
-
+**Обязательно измените:**
 ```bash
-#!/bin/bash
-set -e
-
-# Русская локаль для 1С:Предприятие
-export LANG=ru_RU.UTF-8
-export LC_COLLATE=ru_RU.UTF-8
-export LC_CTYPE=ru_RU.UTF-8
-
-# Остальная инициализация...
-exec "$@"
+DB_PASSWORD=ваш_сложный_пароль
+GRAFANA_ADMIN_PASSWORD=ваш_пароль
+PGADMIN_PASSWORD=ваш_пароль
 ```
 
-### Проверка локали кластера
-
-```sql
--- Посмотреть локаль шаблонов
-SELECT datname, datcollate, datctype 
-FROM pg_database 
-WHERE datname IN ('template0', 'template1');
-```
-
-**Ожидаемый результат:**
-```
-  datname  | datcollate  | datctype  
------------+-------------+-----------
- template0 | ru_RU.UTF-8 | ru_RU.UTF-8
- template1 | ru_RU.UTF-8 | ru_RU.UTF-8
-```
-
-### Если локаль неверная
-
-**Пересоберите контейнер с правильным `entrypoint.sh`:**
+### Шаг 4: Запуск инфраструктуры
 
 ```powershell
-# Остановить текущий контейнер
-docker-compose down -v
-
-# Пересобрать образ
-docker build -t postgres:18.1-2.1C-ubuntu2204 ./docker/postgres-1c --no-cache
-
-# Запустить заново
+# Запустите все сервисы
 docker-compose up -d
+
+# Проверьте статус
+docker-compose ps
 ```
+
+**Все сервисы должны быть в статусе `Up (healthy)`**
 
 ---
 
-## 📁 Создание базы данных для 1С с русской локалью
+## ⚙️ Настройка
 
-### Шаг 1: Войти в psql
+### PostgreSQL
+
+**Подключение:**
+- **Host:** localhost
+- **Port:** 5432
+- **Database:** template1c (или создайте свою)
+- **Username:** postgres
+- **Password:** из `.env`
+
+**Создание базы для 1С:**
 
 ```powershell
-docker-compose exec postgres psql -U postgres
-```
+# Подключитесь к PostgreSQL
+docker exec -it postgres-1c psql -U postgres
 
-### Шаг 2: Создать базу с русской локалью (если кластер не настроен)
+# Создайте базу для 1С
+CREATE DATABASE "DemoHRMCorpDemo_bot";
 
-```sql
-CREATE DATABASE "DemoHRMCorpDemo_bot" WITH 
-  LC_COLLATE='ru_RU.UTF-8' 
-  LC_CTYPE='ru_RU.UTF-8' 
-  TEMPLATE=template0 
-  ENCODING='UTF8';
-```
-
-### Шаг 3: Проверить локаль
-
-```sql
-SELECT datname, datcollate, datctype FROM pg_database 
-WHERE datname = 'DemoHRMCorpDemo_bot';
-```
-
-**Ожидаемый результат:**
-```
-       datname        | datcollate  | datctype  
-----------------------+-------------+-----------
- DemoHRMCorpDemo_bot  | ru_RU.UTF-8 | ru_RU.UTF-8
-```
-
-### Шаг 4: Изменить пароль (если нужно)
-
-```sql
-ALTER USER postgres WITH PASSWORD '123';
-```
-
-### Шаг 5: Выйти
-
-```sql
+# Выйдите
 \q
 ```
 
----
+### pgAdmin
 
-## 🔧 Подключение 1С:Предприятие
+1. Откройте http://localhost:5050
+2. Войдите:
+   - **Email:** admin@admin.com
+   - **Password:** admin
+3. Добавьте сервер PostgreSQL:
+   - **Host:** postgres
+   - **Port:** 5432
+   - **Username:** postgres
+   - **Password:** из `.env`
 
-### В Консоли администрирования 1С:
+### Grafana
 
-| Поле | Значение |
-|------|----------|
-| **Имя** | `DemoHRMCorpDemo_bot` |
-| **Сервер баз данных** | `localhost` |
-| **Тип СУБД** | `PostgreSQL` |
-| **База данных** | `DemoHRMCorpDemo_bot` |
-| **Пользователь сервера БД** | `postgres` |
-| **Пароль сервера БД** | `123` (или из `.env`) |
-| **Язык (Страна)** | `русский (Россия)` ✅ |
-| **✓ Создать базу данных...** | `☐` **НЕ СТАВЬТЕ!** |
+1. Откройте http://localhost:3002
+2. Войдите:
+   - **Username:** admin
+   - **Password:** из `.env`
+3. Смените пароль при первом входе
 
-### Открыть в 1С:Конфигуратор
-
-1. Запустить **1С:Конфигуратор**
-2. Выбрать базу: `DemoHRMCorpDemo_bot`
-3. **Открыть**
-
-**Готово!** ✅
-
----
-
-## 🖥️ Агент сервера 1С - настройка и проверка
-
-### Установка 1С:Сервер
-
-1. **Панель управления** → **Программы и компоненты**
-2. **1С:Предприятие 8** → **Изменить**
-3. Выбрать **"Изменить"** → **Далее**
-4. Отметить компоненты:
-   - ✅ **Сервер 1С:Предприятия 8**
-   - ✅ **Администрирование сервера 1С:Предприятия**
-5. **Далее** → **Установить**
-
-### Проверка службы
-
-```powershell
-# Проверить состояние службы
-Get-Service -Name "1C:Enterprise 8.5 Server Agent*" | 
-  Select-Object Name, Status, StartType
-
-# Ожидаемый результат:
-# Name                                     Status StartType
-# ----                                     ------ ---------
-# 1C:Enterprise 8.5 Server Agent (x86-64) Running Automatic
-```
-
-### Проверка портов
-
-```powershell
-# Проверить порты 1540/1541
-netstat -ano | findstr ":1540 :1541"
-
-# Ожидаемый результат:
-# TCP    0.0.0.0:1540    0.0.0.0:0    LISTENING
-# TCP    0.0.0.0:1541    0.0.0.0:0    LISTENING
-```
-
-### Консоль администрирования
-
-**Запуск:**
-```
-Пуск → 1С Предприятие 8 (x86-64) → Дополнительно → 
-Администрирование серверов 1С Предприятия x86-64
-```
-
-**Или через MMC:**
-```powershell
-mmc.exe "E:\DEV_LOCAL\INSTALLED\1cv8\8.5.1.1150\bin\rsadmin.dll"
-```
-
-### Проверка многопользовательского режима
-
-1. **Открыть базу в первом окне** (1С:Предприятие)
-2. **Открыть базу во втором окне** (другой пользователь)
-3. **Проверить в консоли кластера:**
-   - Локальный кластер → Сеансы
-   - Должно быть: 2 активных сеанса
-
-**✅ Успех:** Оба пользователя работают одновременно!
+**Алерты уже настроены!** Проверьте:
+- Список алертов: http://localhost:3002/alerting/list
+- Contact Points: http://localhost:3002/alerting/notifications
 
 ---
 
-## 🔄 Обновлятор 1С (бэкапы)
+## 📊 Мониторинг
 
-### Установка и настройка
-
-1. **Скачать Обновлятор 1С** от Владимира Милькина:  
-   https://helpme1s.ru/obnovlyator-1s-gruppovoe-paketnoe-obnovlenie-vsex-baz-za-odin-raz
-
-2. **Установить** (GUI-приложение на .NET Framework)
-
-3. **Настроить подключение к СУБД:**
-
-| Поле | Значение |
-|------|----------|
-| **Путь к папке bin PostgreSQL** | `E:\DEV_LOCAL\INSTALLED\pgAdmin 4\runtime` |
-| **Тип СУБД** | `PostgreSQL` |
-| **Адрес для операций** | `localhost` |
-| **Адрес для новой базы** | `localhost` |
-| **Администратор** | `postgres` |
-| **Его пароль** | из `.env` |
-
-4. **Настроить базу для архивации:**
-
-| Поле | Значение |
-|------|----------|
-| **Имя базы** | `DemoHRMCorpDemo_bot` |
-| **Кластер 1С** | `localhost` |
-| **Путь к архивам** | `E:\DEV_LOCAL\Updater_backups\` |
-| **Хранить копий** | `2` |
-
-### 🔧 Требования к клиентским утилитам PostgreSQL
-
-**💡 Важно:** Для работы Обновлятора 1С с PostgreSQL в Docker требуются клиентские утилиты PostgreSQL (`pg_dump`, `psql`, `pg_restore`).
-
-**Что нужно знать:**
-
-| Компонент | Назначение | Нужно ли устанавливать? |
-|-----------|------------|-------------------------|
-| **PostgreSQL Server** | Сервер СУБД | ❌ **НЕТ** (уже работает в Docker) |
-| **pg_dump, psql, pg_restore** | Консольные утилиты для бэкапов | ✅ **ДА** (требуются Обновлятору) |
-| **pgAdmin (GUI)** | Веб-интерфейс для управления | ⚠️ Опционально (не требуется Обновлятору) |
-
-**Рекомендуемый вариант (наш случай):**
-
-При установке **pgAdmin 4 для Windows** в папке `runtime` **автоматически устанавливаются** все необходимые клиентские утилиты PostgreSQL!
+### Архитектура
 
 ```
-Путь к утилитам: E:\DEV_LOCAL\INSTALLED\pgAdmin 4\runtime
+┌─────────────────┐
+│  Сервисы (10)   │
+└────────┬────────┘
+         │
+    ┌────▼─────┐
+    │ Prometheus│ ← Сбор метрик каждые 15-30 сек
+    └────┬─────┘
+         │
+    ┌────▼─────┐
+    │  Grafana │ ← Алерты и дашборды
+    └────┬─────┘
+         │
+    ┌────▼─────┐
+    │ VoceChat │ ← Уведомления
+    └──────────┘
 ```
 
-**Что входит в runtime:**
-- ✅ `pg_dump.exe` — создание резервных копий
-- ✅ `psql.exe` — выполнение SQL-запросов
-- ✅ `pg_restore.exe` — восстановление из бэкапа
-- ✅ Другие вспомогательные утилиты
+### Компоненты мониторинга
 
-**Альтернативный вариант (если pgAdmin не установлен):**
+| Компонент | Назначение |
+|-----------|------------|
+| **Prometheus** | Сбор и хранение метрик (time-series database) |
+| **cAdvisor** | Метрики контейнеров (CPU, RAM, network) |
+| **postgres-exporter** | Метрики PostgreSQL |
+| **Blackbox Exporter** | HTTP-проверки доступности |
+| **Grafana** | Визуализация, алерты, уведомления |
 
-Можно установить **только PostgreSQL Client** (минимальная установка ~50-100 MB):
-1. Скачать с [официального сайта](https://www.postgresql.org/download/windows/)
-2. При установке выбрать **только "Command Line Tools"**
-3. Указать путь к папке `bin` (например: `C:\Program Files\PostgreSQL\18\bin`)
+### Алерты
 
-> ⚠️ **Не устанавливайте полный PostgreSQL Server** на хост, если он уже работает в Docker! Это создаст конфликт портов и займёт лишние ресурсы.
+#### Критические (🔴)
 
-### Проверка работы
+| Алерт | Условие | Описание |
+|-------|---------|----------|
+| **PostgreSQL is DOWN** | `pg_up == 0` | PostgreSQL недоступен |
+| **Portainer Down** | HTTP проверка не прошла | Portainer недоступен |
+| **pgAdmin Down** | HTTP проверка не прошла | pgAdmin недоступен |
+| **Grafana is DOWN** | HTTP проверка не прошла | Grafana недоступна |
+| **Prometheus is DOWN** | `up{job="prometheus"} < 1` | Prometheus недоступен |
+| **VoceChat Notifications** | HTTP проверка не прошла | VoceChat недоступен |
+| **cAdvisor is DOWN** | `up{job="cadvisor"} < 1` | cAdvisor недоступен |
 
-1. **Запустить архивацию** (кнопка "Архивировать базы")
-2. **Проверить отчёт:**
-   - ✅ Архив создан
-   - ✅ Размер: ~1009.92 МБ
-   - ✅ Время: ~1 мин 18 сек
-3. **Проверить файл бэкапа:**
-   ```
-   E:\DEV_LOCAL\Updater_backups\DemoHRMCorpDemo_bot {...}\
-   ```
+#### Предупреждения (🟡)
 
-### Автоматизация (встроенный планировщик)
+| Алерт | Условие | Описание |
+|-------|---------|----------|
+| **High CPU Usage** | CPU > 80% (5 min average) | Высокая загрузка CPU |
+| **High Memory Usage** | RAM > 1 GB | Высокое потребление памяти |
+| **High Disk Usage** | Disk > 85% | ⚠️ Не работает на Docker Desktop |
 
-**💡 Важно:** Обновлятор 1С имеет **встроенный механизм регламентных заданий** и автоматически встраивается в Планировщик заданий Windows при настройке расписания через интерфейс программы.
+### Уведомления
 
-**Настройка расписания:**
+**Куда приходят:**
+- VoceChat (локальный чат)
+- Канал: `#alerts`
 
-1. Откройте Обновлятор 1С
-2. Перейдите: **Настройки программы** → **Расписание** (кнопка "Секундочку...")
-3. Нажмите **"Добавить задачу"** (кнопка "+")
-4. Выберите операцию из списка:
-   - **АРХИВАЦИЯ** — создание резервных копий
-   - **ОБНОВЛЕНИЕ** — обновление конфигураций
-   - **ПРОВЕРКА АРХИВОВ** — проверка целостности бэкапов
-   - **ТОЛЬКО СКАЧИВАНИЕ ОБНОВЛЕНИЙ**
-   - **ТЕСТИРОВАНИЕ И ИСПРАВЛЕНИЕ**
-   - **ЗАПУСК СКРИПТА**
-   - **ТОЛЬКО ОБНОВЛЕНИЕ БАЗЫ ДАННЫХ**
-   - **ТОЛЬКО УСТАНОВКА ИСПРАВЛЕНИЙ**
-   - **СБОР ОТЧЁТОВ ПО ОПЕРАЦИЯМ ЗА ПЕРИОД**
-   - **ОЧИСТКА ВРЕМЕННЫХ ФАЙЛОВ**
-   - **СКАЧИВАНИЕ ОЗНАКОМИТЕЛЬНЫХ ОБНОВЛЕНИЙ**
-   - **УДАЛИТЬ ПОМЕЧЕННЫЕ НА УДАЛЕНИЕ ОБЪЕКТЫ**
-   - **ПРОВЕРКА НАСТРОЕК**
-   - **ПРОВЕРКА ОБНОВЛЕНИЙ**
-   - **СКАЧИВАНИЕ ИСПРАВЛЕНИЙ В КЭШ**
-   - **СБОР ИНФОРМАЦИИ О ПОЛЬЗОВАТЕЛЯХ**
-   - **ВЫПОЛНЕНИЕ ДЕЙСТВИЙ НАД ПОЛЬЗОВАТЕЛЯМИ**
+**Когда приходят:**
+- Через 2 минуты после срабатывания алерта (pending period)
+- При восстановлении сервиса (resolved)
 
-5. Настройте параметры:
-   - **Периодичность:** Однократно, Ежедневно, Еженедельно, Ежемесячно, При входе в систему, Ручной запуск
-   - **Дни недели** (для еженедельного)
-   - **Время запуска**
-   - **Дополнительные параметры** (выполнять с правами админа, экономить ресурсы и т.д.)
+**Пример уведомления:**
+```
+🚨 FIRING ALERTS
+━━━━━━━━━━━━━━━━━━━━
+🔴 *FIRING:*
+• pgAdmin Down
+  🟠 pgAdmin Down
+⏰ Started: 11:26:10
 
-6. **Сохраните настройки**
-
-**Проверка в Планировщике Windows:**
-
-```powershell
-# Открыть планировщик заданий
-taskschd.msc
-
-# Или найти задачи Обновлятора
-Get-ScheduledTask | Where-Object {$_.TaskName -like "*1C*" -or $_.TaskName -like "*Updater*"}
+━━━━━━━━━━━━━━━━━━━━
+📊 Total: 1 firing, 0 resolved
 ```
 
-**Преимущества встроенного планировщика:**
-- ✅ Автоматическая регистрация задач при настройке
-- ✅ Гибкая настройка расписания через GUI
-- ✅ Логирование выполнения в интерфейсе Обновлятора
-- ✅ Уведомления о результатах
-- ✅ Не требует ручных PowerShell-команд
+### Prometheus Queries
 
-**📚 Подробная инструкция:**  
-https://helpme1s.ru/obnovlyator-1s-kak-nastroit-zapusk-po-raspisaniyu-v3
+**Полезные запросы:**
 
-### Преимущества Обновлятора
+```promql
+# Статус всех сервисов
+up
 
-| Возможность | Описание |
-|-------------|----------|
-| **Пакетное обновление** | Все базы за один раз |
-| **Архивация** | Полные бэкапы с проверкой |
-| **Восстановление** | Из архива в один клик |
-| **Работа с хранилищами** | Поддержка конфигураций с хранилищем |
-| **Отраслевые решения** | Поддержка нетиповых конфигураций |
-| **Отчёты** | Детальные логи каждой операции |
-| **Встроенный планировщик** | Автоматизация без ручных скриптов |
+# Статус PostgreSQL
+pg_up
+
+# CPU использование (проценты)
+rate(container_cpu_usage_seconds_total{name!=""}[5m]) * 100
+
+# RAM использование (MB)
+container_memory_usage_bytes{name!=""} / 1000000
+
+# HTTP доступность
+probe_success{job="blackbox-http"}
+
+# Количество контейнеров
+count(container_last_seen{name!=""})
+```
+
+Подробнее в [`COMMANDS.md`](COMMANDS.md#-prometheus-queries)
 
 ---
 
-## 🐳 Оркестрация: docker-compose
+## 🔧 Управление сервисами
 
-### Структура docker-compose.yml
-
-```yaml
-services:
-  postgres:    # PostgreSQL 1С (СУБД)
-  portainer:   # Управление Docker (веб)
-  pgadmin:     # Администрирование БД (веб)
-```
-
-### Ключевые настройки
-
-| Параметр | Значение | Почему |
-|----------|----------|--------|
-| `ports: 0.0.0.0:9000` | Все интерфейсы | Доступ через Tailscale |
-| `volumes: named` | `postgres-data` | Переносимость, бэкапы |
-| `healthcheck` | `pg_isready` | Авто-перезапуск при сбое |
-| `restart: unless-stopped` | Авто-старт | После перезагрузки ПК |
-
-### Переменные окружения (.env)
-
-```bash
-# Пароли и настройки (НЕ КОММИТИТЬ!)
-DB_PASSWORD=ChangeMe123!
-PGADMIN_EMAIL=admin@example.com
-PGADMIN_PASSWORD=admin
-```
-
-**Создание из шаблона:**
-```powershell
-Copy-Item .env.example .env
-code .env  # Заполнить пароли
-```
-
----
-
-## 🔍 Диагностика
+### Основные команды
 
 ```powershell
-# Проверить конфигурацию
-docker-compose config
+# Запустить все
+docker-compose up -d
 
-# Проверить логи
-docker-compose logs postgres --tail 20
-
-# Проверить healthcheck
-docker inspect postgres-1c --format='{{.State.Health.Status}}'
-# Должно вернуть: healthy
-
-# Проверить локаль базы
-docker-compose exec postgres psql -U postgres -c "SELECT datname, datcollate, datctype FROM pg_database;"
-
-# Проверить размер базы
-docker-compose exec postgres psql -U postgres -c "SELECT pg_size_pretty(pg_database_size('DemoHRMCorpDemo_bot'));"
-
-# Проверить количество таблиц
-docker-compose exec postgres psql -U postgres -d "DemoHRMCorpDemo_bot" -c "SELECT COUNT(*) FROM pg_tables WHERE schemaname = 'public';"
-
-# Проверить Агент сервера 1С
-Get-Service -Name "1C:Enterprise*Server*" | Select-Object Name, Status
-netstat -ano | findstr ":1540 :1541"
-```
-
----
-
-## 🔧 Основные команды
-
-```powershell
-# Просмотр логов
-docker-compose logs postgres --tail 50
-docker-compose logs portainer --tail 50
-
-# Перезапуск
-docker-compose restart postgres
-
-# Остановка
+# Остановить все
 docker-compose down
 
-# Остановка с удалением данных (⚠ осторожно!)
-docker-compose down -v
+# Перезапустить сервис
+docker-compose restart <service_name>
 
-# Подключение к PostgreSQL
-docker-compose exec postgres psql -U postgres -d template1c
+# Остановить сервис
+docker-compose stop <service_name>
 
-# Проверка версии
-docker-compose exec postgres psql -U postgres -c "SELECT version();"
+# Запустить сервис
+docker-compose start <service_name>
 
-# Статус
+# Просмотр логов
+docker-compose logs <service_name> --tail 100
+
+# Статус всех сервисов
+docker-compose ps
+```
+
+### Тестирование алертов
+
+```powershell
+# 1. Остановите сервис
+docker-compose stop pgadmin
+
+# 2. Подождите 2-3 минуты
+
+# 3. Проверьте VoceChat - должно прийти уведомление
+
+# 4. Запустите сервис обратно
+docker-compose start pgadmin
+
+# 5. Проверьте VoceChat - должно прийти RESOLVED
+```
+
+---
+
+## 🐛 Диагностика
+
+### Сервис не запускается
+
+```powershell
+# 1. Проверьте логи
+docker-compose logs <service_name> --tail 100
+
+# 2. Проверьте статус
 docker-compose ps
 
-# Создать бэкап
-docker-compose exec postgres pg_dump -U postgres -d "MyBase" -F c -f /tmp/backup.dump
-docker-compose cp postgres:/tmp/backup.dump .\backup.dump
+# 3. Пересоздайте контейнер
+docker-compose up -d --force-recreate <service_name>
 
-# Восстановить из бэкапа
-docker cp .\backup.dump postgres-1c:/tmp/backup.dump
-docker-compose exec -T postgres pg_restore -U postgres -d "MyBase" /tmp/backup.dump
+# 4. Проверьте переменные окружения
+cat .env
+```
+
+### Алерты не приходят
+
+```powershell
+# 1. Проверьте статус алертов в Grafana
+#    http://localhost:3002/alerting/list
+
+# 2. Проверьте Contact Point
+#    http://localhost:3002/alerting/notifications
+
+# 3. Проверьте шаблоны
+#    http://localhost:3002/alerting/notifications/templates
+
+# 4. Проверьте логи Grafana
+docker-compose logs grafana --tail 100
+```
+
+### Prometheus не видит метрики
+
+```powershell
+# 1. Проверьте targets
+#    http://localhost:9090/targets
+
+# 2. Проверьте конфигурацию Prometheus
+cat monitoring/prometheus.yml
+
+# 3. Перезапустите Prometheus
+docker-compose restart prometheus
+
+# 4. Проверьте логи Prometheus
+docker-compose logs prometheus --tail 50
+```
+
+### Blackbox не проверяет HTTP
+
+```powershell
+# 1. Проверьте логи Blackbox
+docker-compose logs blackbox-exporter --tail 50
+
+# 2. Проверьте конфигурацию
+cat monitoring/blackbox.yml
+
+# 3. Проверьте targets в Prometheus
+#    http://localhost:9090/targets
+#    Найдите blackbox-http
+```
+
+### PostgreSQL не подключается
+
+```powershell
+# 1. Проверьте статус PostgreSQL
+docker-compose ps postgres
+
+# 2. Проверьте логи
+docker-compose logs postgres --tail 50
+
+# 3. Проверьте пароль
+docker exec -it postgres-1c psql -U postgres -c "SELECT 1"
+
+# 4. Проверьте список БД
+docker exec -it postgres-1c psql -U postgres -c "\l"
 ```
 
 ---
 
-## 🔐 Безопасность
+## ❓ Часто задаваемые вопросы
 
-### ✅ Что уже сделано:
+### Q: Как добавить новую базу данных для 1С?
 
-- [x] Пароли в `.env` (добавлен в `.gitignore`)
-- [x] Именованные volumes (не bind mounts)
-- [x] Healthcheck для PostgreSQL
-- [x] Private GitHub репозиторий
-- [x] GitHub 2FA включена
-- [x] Tailscale VPN (шифрование WireGuard)
-- [x] Доступ только у авторизованных устройств
-- [x] Нет открытых портов в публичный интернет
-- [x] Обновлятор 1С настроен (автоматические бэкапы)
+```powershell
+docker exec -it postgres-1c psql -U postgres
 
-### ⚠️ Что нужно сделать:
+CREATE DATABASE "YourDatabaseName";
+\q
+```
 
-- [ ] Добавить мониторинг (cAdvisor/Grafana)
-- [ ] Настроить Tailscale с 2FA (опционально)
-- [ ] Включить 2FA на всех связанных аккаунтах
-- [ ] Резервное копирование в облако
+### Q: Как изменить пароль PostgreSQL?
+
+1. Остановите PostgreSQL:
+   ```powershell
+   docker-compose stop postgres
+   ```
+
+2. Измените `POSTGRES_PASSWORD` в `.env`
+
+3. Удалите volume (данные удалятся!):
+   ```powershell
+   docker volume rm 1c-infrastructure_postgres-data
+   ```
+
+4. Запустите заново:
+   ```powershell
+   docker-compose up -d postgres
+   ```
+
+### Q: Как изменить порты сервисов?
+
+Отредактируйте `docker-compose.yml`:
+
+```yaml
+ports:
+  - "3003:3002"  # Вместо 3002:3002
+```
+
+### Q: Как обновить образы Docker?
+
+```powershell
+# Скачайте новые образы
+docker-compose pull
+
+# Пересоздайте контейнеры
+docker-compose up -d --force-recreate
+```
+
+### Q: Где хранятся данные?
+
+- **PostgreSQL:** Docker volume `1c-infrastructure_postgres-data`
+- **Grafana:** `./grafana/data`
+- **Prometheus:** `./prometheus/data`
+
+### Q: Как сделать бэкап PostgreSQL?
+
+```powershell
+docker exec postgres-1c pg_dump -U postgres template1c > backup.sql
+```
+
+### Q: Как восстановить PostgreSQL из бэкапа?
+
+```powershell
+cat backup.sql | docker exec -i postgres-1c psql -U postgres
+```
+
+### Q: Как очистить неиспользуемые ресурсы Docker?
+
+```powershell
+# Очистить stopped контейнеры
+docker container prune
+
+# Очистить unused volumes (осторожно!)
+docker volume prune
+
+# Полная очистка
+docker system prune -a --volumes
+```
 
 ---
 
-## 🛠️ Устранение проблем
+## 📞 Поддержка
 
-### Portainer не подключается
+При возникновении проблем:
 
-```powershell
-# Проверить TCP API
-curl http://localhost:2375/version
-
-# Перезапустить Portainer
-docker-compose restart portainer
-```
-
-### PostgreSQL не запускается
-
-```powershell
-# Посмотреть логи
-docker-compose logs postgres
-
-# Пересоздать
-docker-compose down -v
-docker-compose up -d
-```
-
-### Забыли пароль от pgAdmin
-
-```powershell
-# Сбросить через docker
-docker-compose exec pgadmin4 pgadmin4-cli reset-password admin@example.com
-```
-
-### Нет доступа через Tailscale
-
-```powershell
-# 1. Проверить Tailscale
-tailscale status
-
-# 2. Проверить IP
-tailscale ip
-
-# 3. Проверить порты
-netstat -an | findstr ":9000 :5050"
-
-# 4. Проверить брандмауэр
-# Разрешить порты 9000 и 5050
-```
-
-### Ошибка "Порядок сортировки не поддерживается базой данных"
-
-**Решение:** Создавайте базу с русской локалью:
-
-```sql
-CREATE DATABASE "MyBase" WITH 
-  LC_COLLATE='ru_RU.UTF-8' 
-  LC_CTYPE='ru_RU.UTF-8' 
-  TEMPLATE=template0 
-  ENCODING='UTF8';
-```
-
-### Пароль PostgreSQL не меняется после рестарта
-
-**Решение:** Используйте `ALTER USER`:
-
-```sql
-ALTER USER postgres WITH PASSWORD '123';
-```
-
-### Агент сервера 1С не запускается
-
-```powershell
-# Проверить службу
-Get-Service -Name "1C:Enterprise*Server*"
-
-# Перезапустить
-Restart-Service "1C:Enterprise 8.5 Server Agent" -Force
-
-# Проверить логи
-Get-EventLog -LogName Application -Source "1C*" -Newest 20
-```
-
-### Консоль администрирования не открывается
-
-**Решение:** Переустановите компонент:
-1. Панель управления → Программы и компоненты
-2. 1С:Предприятие → Изменить
-3. Отметить "Администрирование сервера" → Далее
-
-### Обновлятор 1С не подключается к PostgreSQL
-
-**Решение:**
-1. Проверьте путь к `pgAdmin 4\runtime`
-2. Убедитесь, что `psql.exe` и `pg_dump.exe` существуют
-3. Проверьте пароль пользователя `postgres` (из `.env`)
-4. Проверьте, что Docker-контейнер запущен (`docker-compose ps`)
+1. Проверьте [`COMMANDS.md`](COMMANDS.md) - шпаргалка по командам
+2. Изучите раздел [Диагностика](#диагностика)
+3. Проверьте логи сервисов
+4. Проверьте статус алертов в Grafana
 
 ---
 
-## 📈 Планы развития (приоритеты)
+## 📝 Changelog
 
-### 🔥 Высокий приоритет (эта неделя):
-
-- [x] ~~Установить 1С:Предприятие на хост~~ ✅ **Готово**
-- [x] ~~Подключить 1С к PostgreSQL~~ ✅ **Готово**
-- [x] ~~Создать первую информационную базу~~ ✅ **Готово**
-- [x] ~~Агент сервера 1С~~ ✅ **Готово** (протестирован)
-- [x] ~~Обновлятор 1С для бэкапов~~ ✅ **Готово** (01.04.2026)
-
-### ⚡ Средний приоритет (следующая неделя):
-
-- [ ] Терминальный сервер в ВМ (Hyper-V + Windows 11 / Server) (~2 часа)
-- [ ] Мониторинг (cAdvisor + Grafana) (~1.5 часа)
-
-### 📝 Низкий приоритет (когда будет время):
-
-- [ ] Статья на Habr/VC с этим таймингом
-- [ ] CI/CD для 1С-кода (GitLab CI/GitHub Actions)
-- [ ] Резервное копирование в облако
+### 2026-04-03
+- ✅ Добавлен мониторинг (Grafana + Prometheus)
+- ✅ Добавлен Blackbox Exporter для HTTP проверок
+- ✅ Добавлен postgres-exporter для метрик PostgreSQL
+- ✅ Настроены алерты с уведомлениями в VoceChat
+- ✅ Добавлена документация (COMMANDS.md, TIMING.md, SUMMARY.md)
 
 ---
 
-## 💡 Полезные ссылки
+## 🔗 Ссылки
 
-- 📦 [1С:ИТС releases](https://releases.1c.ru)
-- 📚 [PostgreSQL docs](https://postgrespro.ru/docs)
-- 🐳 [Docker Desktop](https://www.docker.com/products/docker-desktop)
-- 📊 [Portainer docs](https://docs.portainer.io)
-- 🔒 [Tailscale](https://tailscale.com)
-- 🔐 [GitHub 2FA](https://github.com/settings/security)
-- 🦙 [Ollama](https://ollama.com)
-- 🔄 [Обновлятор 1С](https://helpme1s.ru/obnovlyator-1s-gruppovoe-paketnoe-obnovlenie-vsex-baz-za-odin-raz)
-- 📅 [Настройка расписания в Обновляторе](https://helpme1s.ru/obnovlyator-1s-kak-nastroit-zapusk-po-raspisaniyu-v3)
-
----
-
-## 👤 Автор и поддержка
-
-**Автор:** Vladimir Bessonov  
-**Email:** bessonov_1989@list.ru  
-**Репозиторий:** https://github.com/VladimirProgrammist1C/1c-infrastructure  
-**Лицензия:** MIT
-
-**Время развёртывания:** ~30 минут (при наличии дистрибутива PostgreSQL 1С)  
-**Последнее обновление:** 01 апреля 2026  
-**Версия:** 2.3
-
-> 💡 **Совет:** При возникновении проблем смотрите `docker-compose logs <service>` и проверяйте `docker-compose ps`
+- [Официальная документация Docker](https://docs.docker.com/)
+- [Prometheus Documentation](https://prometheus.io/docs/)
+- [Grafana Documentation](https://grafana.com/docs/)
+- [1С:Предприятие Documentation](https://users.v8.1c.ru/)
