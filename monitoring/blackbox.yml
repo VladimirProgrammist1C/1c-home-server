@@ -1,0 +1,16 @@
+modules:
+  http_2xx_or_redirect:
+    prober: http
+    http:
+      valid_status_codes:
+        - 200
+        - 201
+        - 202
+        - 204
+        - 301
+        - 302
+        - 303
+        - 307
+        - 308
+        - 401  # pgAdmin требует авторизацию
+        - 403  # Forbidden (но сервер работает)

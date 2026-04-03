@@ -1,0 +1,12 @@
+apiVersion: 1
+
+notifiers:
+  - name: VoceChat Notifications
+    type: webhook
+    uid: vocechat-webhook
+    is_default: true
+    send_reminder: true
+    frequency: 1h
+    settings:
+      url: 'http://localhost:3000/api/bot/send?token=6f82ec6266702b5a47768b32c7a7b7210b6087e1d0e1d6e7947989dc1e1990b27b22756964223a332c226e6f6e6365223a2267703330474c4b557a576b4141414141666a676b58673863592f47797a6e5062227d'
+      httpMethod: POST

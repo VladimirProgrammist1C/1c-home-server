@@ -1,0 +1,37 @@
+﻿global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    monitor: '1c-home-server'
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  - job_name: 'cadvisor'
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['cadvisor:8080']
+    
+  - job_name: 'postgres-exporter'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+
+  - job_name: 'blackbox-http'
+    metrics_path: /probe
+    params:
+      module: [http_2xx_or_redirect]  # ← новый модуль
+    static_configs:
+      - targets:
+          - http://pgadmin4:80
+          - http://portainer:9000
+          - http://grafana:3000/api/health  # Grafana health endpoint
+          - http://vocechat-notifications:3000
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox-exporter:9115

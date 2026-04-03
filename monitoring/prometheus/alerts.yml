@@ -1,0 +1,107 @@
+﻿# =============================================================================
+# Prometheus Alert Rules для 1C Home Server
+# Версия: 3.1 - ПРАВИЛЬНЫЙ YAML
+# =============================================================================
+
+groups:
+  - name: infrastructure
+    rules:
+      - alert: PostgreSQLDown
+        expr: up{job="cadvisor", name="postgres-1c"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "🔴 PostgreSQL is DOWN"
+          description: "Container postgres-1c is not responding for more than 1 minute"
+          runbook_url: "http://localhost:9000"
+
+      - alert: PortainerDown
+        expr: up{job="cadvisor", name="portainer"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "🟠 Portainer is DOWN"
+          description: "Container portainer is not responding for more than 2 minutes"
+
+      - alert: PgAdminDown
+        expr: up{job="cadvisor", name="pgadmin4"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "🟠 pgAdmin is DOWN"
+          description: "Container pgadmin4 is not responding for more than 2 minutes"
+
+      - alert: GrafanaDown
+        expr: up{job="cadvisor", name="grafana"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "🟠 Grafana is DOWN"
+          description: "Container grafana is not responding for more than 2 minutes"
+
+      - alert: PrometheusDown
+        expr: up{job="prometheus"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "🟠 Prometheus is DOWN"
+          description: "Prometheus server is not responding for more than 2 minutes"
+
+      - alert: VoceChatDown
+        expr: up{job="cadvisor", name="vocechat"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "🟠 VoceChat is DOWN"
+          description: "Container vocechat is not responding for more than 2 minutes"
+
+      - alert: VoceChatNotifyDown
+        expr: up{job="cadvisor", name="vocechat-notifications"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "🟠 VoceChat Notifications is DOWN"
+          description: "Container vocechat-notifications is not responding for more than 2 minutes"
+
+      - alert: CAdvisorDown
+        expr: up{job="cadvisor"} == 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "🟠 cAdvisor is DOWN"
+          description: "cAdvisor container is not responding for more than 2 minutes"
+
+      - alert: HighCPUUsage
+        expr: rate(container_cpu_usage_seconds_total{name!=""}[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "🟡 High CPU usage detected"
+          description: "Container is using more than 80% CPU for 5 minutes"
+
+      - alert: HighMemoryUsage
+        expr: container_memory_usage_bytes{name!=""} > 1000000000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "🟡 High memory usage detected"
+          description: "Container memory usage is above 1GB for 5 minutes"
+
+      - alert: HighDiskUsage
+        expr: (node_filesystem_size_bytes{mountpoint="/"} - node_filesystem_free_bytes{mountpoint="/"}) / node_filesystem_size_bytes{mountpoint="/"} > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "🟡 High disk usage detected"
+          description: "Disk usage is above 85% on root partition"
