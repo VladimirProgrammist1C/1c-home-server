@@ -1,107 +1,167 @@
 ﻿# =============================================================================
-# Prometheus Alert Rules для 1C Home Server
-# Версия: 3.1 - ПРАВИЛЬНЫЙ YAML
+# Алерты для мониторинга инфраструктуры 1С
+# =============================================================================
+# Этот файл подключается в prometheus.yml через rule_files
 # =============================================================================
 
 groups:
-  - name: infrastructure
+  # ---------------------------------------------------------------------------
+  # Группа 1: Мониторинг самого Prometheus
+  # ---------------------------------------------------------------------------
+  - name: prometheus-self-monitoring
+    interval: 30s
     rules:
-      - alert: PostgreSQLDown
-        expr: up{job="cadvisor", name="postgres-1c"} == 0
+      # 🔴 Критический: Prometheus не отвечает
+      - alert: PrometheusDown
+        expr: up{job="prometheus"} == 0
         for: 1m
         labels:
           severity: critical
+          service: prometheus
+        annotations:
+          summary: "🔴 Prometheus is DOWN"
+          description: "Prometheus server is not responding on localhost:9090"
+          runbook_url: "https://github.com/VladimirProgrammist1C/1c-home-server/blob/master/Docs/infrastructure-guide.md#диагностика"
+
+      # 🟡 Предупреждение: Высокое потребление памяти Prometheus
+      - alert: PrometheusHighMemory
+        expr: process_resident_memory_bytes{job="prometheus"} > 512000000  # 512MB
+        for: 5m
+        labels:
+          severity: warning
+          service: prometheus
+        annotations:
+          summary: "⚠️ Prometheus High Memory Usage"
+          description: "Prometheus is using more than 512MB of memory (current: {{ $value | humanize }})"
+
+  # ---------------------------------------------------------------------------
+  # Группа 2: Доступность сервисов (через Blackbox Exporter)
+  # ---------------------------------------------------------------------------
+  - name: service-availability
+    interval: 30s
+    rules:
+      # 🔴 pgAdmin недоступен
+      - alert: PgAdminDown
+        expr: probe_success{instance="http://pgadmin4:80", job="blackbox-http"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: pgadmin
+        annotations:
+          summary: "🔴 pgAdmin is DOWN"
+          description: "pgAdmin web interface is not responding"
+
+      # 🔴 Portainer недоступен
+      - alert: PortainerDown
+        expr: probe_success{instance="http://portainer:9000", job="blackbox-http"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: portainer
+        annotations:
+          summary: "🔴 Portainer is DOWN"
+          description: "Portainer web interface is not responding"
+
+      # 🔴 Grafana недоступна
+      - alert: GrafanaDown
+        expr: probe_success{instance="http://grafana:3000/api/health", job="blackbox-http"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: grafana
+        annotations:
+          summary: "🔴 Grafana is DOWN"
+          description: "Grafana health endpoint is not responding"
+
+      # 🔴 VoceChat недоступен
+      - alert: VoceChatDown
+        expr: probe_success{instance="http://vocechat-notifications:3000", job="blackbox-http"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          service: vocechat
+        annotations:
+          summary: "🔴 VoceChat is DOWN"
+          description: "VoceChat notifications service is not responding"
+
+  # ---------------------------------------------------------------------------
+  # Группа 3: PostgreSQL метрики
+  # ---------------------------------------------------------------------------
+  - name: postgresql-monitoring
+    interval: 30s
+    rules:
+      # 🔴 PostgreSQL не отвечает
+      - alert: PostgreSQLDown
+        expr: pg_up == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: postgresql
         annotations:
           summary: "🔴 PostgreSQL is DOWN"
-          description: "Container postgres-1c is not responding for more than 1 minute"
-          runbook_url: "http://localhost:9000"
+          description: "PostgreSQL exporter cannot connect to database"
 
-      - alert: PortainerDown
-        expr: up{job="cadvisor", name="portainer"} == 0
-        for: 2m
-        labels:
-          severity: warning
-        annotations:
-          summary: "🟠 Portainer is DOWN"
-          description: "Container portainer is not responding for more than 2 minutes"
-
-      - alert: PgAdminDown
-        expr: up{job="cadvisor", name="pgadmin4"} == 0
-        for: 2m
-        labels:
-          severity: warning
-        annotations:
-          summary: "🟠 pgAdmin is DOWN"
-          description: "Container pgadmin4 is not responding for more than 2 minutes"
-
-      - alert: GrafanaDown
-        expr: up{job="cadvisor", name="grafana"} == 0
-        for: 2m
-        labels:
-          severity: warning
-        annotations:
-          summary: "🟠 Grafana is DOWN"
-          description: "Container grafana is not responding for more than 2 minutes"
-
-      - alert: PrometheusDown
-        expr: up{job="prometheus"} == 0
-        for: 2m
-        labels:
-          severity: warning
-        annotations:
-          summary: "🟠 Prometheus is DOWN"
-          description: "Prometheus server is not responding for more than 2 minutes"
-
-      - alert: VoceChatDown
-        expr: up{job="cadvisor", name="vocechat"} == 0
-        for: 2m
-        labels:
-          severity: warning
-        annotations:
-          summary: "🟠 VoceChat is DOWN"
-          description: "Container vocechat is not responding for more than 2 minutes"
-
-      - alert: VoceChatNotifyDown
-        expr: up{job="cadvisor", name="vocechat-notifications"} == 0
-        for: 2m
-        labels:
-          severity: warning
-        annotations:
-          summary: "🟠 VoceChat Notifications is DOWN"
-          description: "Container vocechat-notifications is not responding for more than 2 minutes"
-
-      - alert: CAdvisorDown
-        expr: up{job="cadvisor"} == 0
-        for: 2m
-        labels:
-          severity: warning
-        annotations:
-          summary: "🟠 cAdvisor is DOWN"
-          description: "cAdvisor container is not responding for more than 2 minutes"
-
-      - alert: HighCPUUsage
-        expr: rate(container_cpu_usage_seconds_total{name!=""}[5m]) > 0.8
+      # 🟡 Много активных подключений
+      - alert: PostgreSQLHighConnections
+        expr: pg_stat_activity_count > 50
         for: 5m
         labels:
           severity: warning
+          service: postgresql
         annotations:
-          summary: "🟡 High CPU usage detected"
-          description: "Container is using more than 80% CPU for 5 minutes"
+          summary: "⚠️ PostgreSQL High Connections"
+          description: "More than 50 active connections (current: {{ $value }})"
 
-      - alert: HighMemoryUsage
-        expr: container_memory_usage_bytes{name!=""} > 1000000000
+  # ---------------------------------------------------------------------------
+  # Группа 4: Ресурсы контейнеров (через cAdvisor)
+  # ---------------------------------------------------------------------------
+  - name: container-resources
+    interval: 30s
+    rules:
+      # 🟡 Высокое потребление CPU контейнером
+      - alert: ContainerHighCPU
+        expr: rate(container_cpu_usage_seconds_total{name!=""}[5m]) * 100 > 80
         for: 5m
         labels:
           severity: warning
+          service: container
         annotations:
-          summary: "🟡 High memory usage detected"
-          description: "Container memory usage is above 1GB for 5 minutes"
+          summary: "⚠️ High CPU Usage: {{ $labels.name }}"
+          description: "Container {{ $labels.name }} is using more than 80% CPU (current: {{ $value | printf \"%.2f\" }}%)"
 
-      - alert: HighDiskUsage
-        expr: (node_filesystem_size_bytes{mountpoint="/"} - node_filesystem_free_bytes{mountpoint="/"}) / node_filesystem_size_bytes{mountpoint="/"} > 0.85
+      # 🟡 Высокое потребление памяти контейнером
+      - alert: ContainerHighMemory
+        expr: container_memory_usage_bytes{name!=""} > 1000000000  # 1GB
         for: 5m
         labels:
           severity: warning
+          service: container
         annotations:
-          summary: "🟡 High disk usage detected"
-          description: "Disk usage is above 85% on root partition"
+          summary: "⚠️ High Memory Usage: {{ $labels.name }}"
+          description: "Container {{ $labels.name }} is using more than 1GB RAM (current: {{ $value | humanize }})"
+
+  # ---------------------------------------------------------------------------
+  # Группа 5: [ОПЦИОНАЛЬНО] Закомментированные алерты для будущего
+  # ---------------------------------------------------------------------------
+  # - name: future-alerts
+  #   interval: 30s
+  #   rules:
+  #     # 🔴 Disk usage (не работает на Docker Desktop без node_exporter)
+  #     # - alert: HighDiskUsage
+  #     #   expr: (node_filesystem_size_bytes - node_filesystem_avail_bytes) / node_filesystem_size_bytes * 100 > 85
+  #     #   for: 5m
+  #     #   labels:
+  #     #     severity: warning
+  #     #   annotations:
+  #     #     summary: "⚠️ High Disk Usage"
+  #     #     description: "Disk usage is above 85%"
+  #
+  #     # 🔴 Network errors (требует дополнительных метрик)
+  #     # - alert: NetworkErrors
+  #     #   expr: rate(container_network_receive_errors_total[5m]) > 0
+  #     #   for: 2m
+  #     #   labels:
+  #     #     severity: warning
+  #     #   annotations:
+  #     #     summary: "⚠️ Network Errors Detected"
+  #     #     description: "Network errors detected on container {{ $labels.name }}"

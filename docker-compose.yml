@@ -22,6 +22,7 @@ services:
       - postgres-data:/var/lib/postgresql/data
     networks:
       - 1c-infrastructure
+      - monitoring
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d template1c"]
       interval: 30s
@@ -40,6 +41,7 @@ services:
       - postgres
     networks:
       - 1c-infrastructure
+      - monitoring
   blackbox-exporter:
     image: prom/blackbox-exporter:latest
     container_name: blackbox-exporter
@@ -48,6 +50,7 @@ services:
       - "0.0.0.0:9115:9115"
     networks:
       - 1c-infrastructure
+      - monitoring
     volumes:
       - ./monitoring/blackbox.yml:/etc/blackbox/blackbox.yml:ro
     command: ['--config.file=/etc/blackbox/blackbox.yml']
@@ -72,27 +75,48 @@ services:
       - postgres
     networks:
       - 1c-infrastructure
+      - monitoring
 
-  # ===========================================================================
-  # Prometheus (Сбор и хранение метрик)
-  # ===========================================================================
+  # =============================================================================
+  # Prometheus - сбор и хранение метрик (ОПТИМИЗИРОВАН)
+  # =============================================================================
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
-    restart: unless-stopped
+    mem_limit: 512m
+    mem_reservation: 256m
+    cpus: 1.0
     ports:
-      - "0.0.0.0:9090:9090"
+      - "9090:9090"
     volumes:
-      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
       - prometheus-data:/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.retention.time=15d'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=3d'
+      - '--storage.tsdb.retention.size=256MB'
       - '--web.enable-lifecycle'
-    networks:
-      - 1c-infrastructure
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
     depends_on:
-      - cadvisor
+      cadvisor:
+        condition: service_started
+      postgres-exporter:
+        condition: service_started
+      blackbox-exporter:
+        condition: service_started
+    networks:
+      - monitoring
+      - 1c-infrastructure
 
   # ===========================================================================
   # cAdvisor (Метрики контейнеров)
@@ -112,6 +136,7 @@ services:
       - /dev/disk/:/dev/disk:ro
     networks:
       - 1c-infrastructure
+      - monitoring
 
   # ===========================================================================
   # Grafana (Визуализация и алерты)
@@ -134,6 +159,7 @@ services:
       - grafana-data:/var/lib/grafana
     networks:
       - 1c-infrastructure
+      - monitoring
     depends_on:
       - prometheus
 
@@ -154,6 +180,7 @@ services:
       - --host=tcp://host.docker.internal:2375
     networks:
       - 1c-infrastructure
+      - monitoring
 
   # ===========================================================================
   # VoceChat Notifications (для мониторинга)
@@ -174,6 +201,7 @@ services:
       - vocechat-notify-data:/home/vocechat-server/data
     networks:
       - 1c-infrastructure
+      - monitoring
 
 # =============================================================================
 # Volumes
@@ -200,3 +228,5 @@ volumes:
 networks:
   1c-infrastructure:
     driver: bridge
+  monitoring:           # ← Добавь эту строку
+    driver: bridge      # ← И эту
