@@ -34,10 +34,10 @@
 
 | Файл | Описание |
 |------|----------|
-| [`infrastructure-guide.md`](infrastructure-guide.md) | 📘 Подробное руководство по развёртыванию и настройке |
+| [`infrastructure-guide.md`](Docs/infrastructure-guide.md) | 📘 Подробное руководство по развёртыванию и настройке |
 | [`COMMANDS.md`](COMMANDS.md) | ⚡ Шпаргалка с основными командами управления |
-| [`TIMING.md`](TIMING.md) | ⏱️ Хронология работ и принятых решений |
-| [`SUMMARY.md`](SUMMARY.md) | 📋 Краткое резюме проекта |
+| [`TIMING.md`](Docs/TIMING.md) | ⏱️ Хронология работ и принятых решений |
+| [`SUMMARY.md`](Docs/SUMMARY.md) | 📋 Краткое резюме проекта |
 
 ---
 
