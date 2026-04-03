@@ -128,6 +128,8 @@ services:
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_ALERTING_ENABLED: "true"
       GF_UNIFIED_ALERTING_ENABLED: "true"
+      GF_INSTALL_PLUGINS: ""
+      TZ: Europe/Moscow
     volumes:
       - grafana-data:/var/lib/grafana
     networks:

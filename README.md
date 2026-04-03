@@ -76,7 +76,7 @@ docker-compose ps
 - Prometheus: http://localhost:9090
 - Алерты: http://localhost:3002/alerting/list
 
-Детали настройки мониторинга — в [`infrastructure-guide.md`](infrastructure-guide.md)
+Детали настройки мониторинга — в [`infrastructure-guide.md`](Docs/infrastructure-guide.md)
 
 ---
 
