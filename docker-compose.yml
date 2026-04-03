@@ -1,53 +1,60 @@
+﻿version: '3.8'
+
+# =============================================================================
+# 1C Home Server Infrastructure
+# =============================================================================
+
 services:
+  # ===========================================================================
+  # PostgreSQL 1С (СУБД)
+  # ===========================================================================
   postgres:
     image: postgres:18.1-2.1C-ubuntu2204
     container_name: postgres-1c
     restart: unless-stopped
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: "123"
       POSTGRES_DB: template1c
-      # Русская локаль:
-      LANG: ru_RU.UTF-8
-      LC_ALL: ru_RU.UTF-8
-      LC_COLLATE: ru_RU.UTF-8
-      LC_CTYPE: ru_RU.UTF-8    
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-ChangeMe123!}
     ports:
-      - "5432:5432"
+      - "0.0.0.0:5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     networks:
-      - infra-net
+      - 1c-infrastructure
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
+      test: ["CMD-SHELL", "pg_isready -U postgres -d template1c"]
+      interval: 30s
+      timeout: 10s
       retries: 5
-    # Добавить в КОНЕЦ секции postgres (на одном уровне с image, container_name и т.д.):
-    command: >
-      postgres
-      -c lc_collate=ru_RU.UTF-8
-      -c lc_ctype=ru_RU.UTF-8
-      -c lc_messages=ru_RU.UTF-8
-      -c lc_monetary=ru_RU.UTF-8
-      -c lc_numeric=ru_RU.UTF-8
-      -c lc_time=ru_RU.UTF-8
-
-  portainer:
-    image: portainer/portainer-ce:latest
-    container_name: portainer
+      start_period: 60s
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: postgres-exporter
     restart: unless-stopped
     ports:
-#      - "9000:9000"
-#      - "8000:8000"
-      - "0.0.0.0:9000:9000"  # ← важно! не 127.0.0.1, Portainer
-      - "0.0.0.0:8000:8000"  # ← важно! не 127.0.0.1, Portainer
-    volumes:
-      - //./pipe/docker_engine:/var/run/docker.sock
-      - portainer-data:/data
+      - "0.0.0.0:9187:9187"
+    environment:
+      DATA_SOURCE_NAME: "postgresql://postgres:123@postgres:5432/postgres?sslmode=disable"
+    depends_on:
+      - postgres
     networks:
-      - infra-net
+      - 1c-infrastructure
+  blackbox-exporter:
+    image: prom/blackbox-exporter:latest
+    container_name: blackbox-exporter
+    restart: unless-stopped
+    ports:
+      - "0.0.0.0:9115:9115"
+    networks:
+      - 1c-infrastructure
+    volumes:
+      - ./monitoring/blackbox.yml:/etc/blackbox/blackbox.yml:ro
+    command: ['--config.file=/etc/blackbox/blackbox.yml']
 
+  # ===========================================================================
+  # pgAdmin 4 (Администрирование PostgreSQL)
+  # ===========================================================================
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: pgadmin4
@@ -55,21 +62,139 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@example.com}
       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
     ports:
-#      - "5050:80"
-      - "0.0.0.0:5050:80"    # ← важно! pgAdmin
+      - "0.0.0.0:5050:80"
     volumes:
       - pgadmin-data:/var/lib/pgadmin
-    networks:
-      - infra-net
     depends_on:
       - postgres
+    networks:
+      - 1c-infrastructure
 
-networks:
-  infra-net:
-    driver: bridge
+  # ===========================================================================
+  # Prometheus (Сбор и хранение метрик)
+  # ===========================================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    restart: unless-stopped
+    ports:
+      - "0.0.0.0:9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+    networks:
+      - 1c-infrastructure
+    depends_on:
+      - cadvisor
 
+  # ===========================================================================
+  # cAdvisor (Метрики контейнеров)
+  # ===========================================================================
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:latest
+    container_name: cadvisor
+    restart: unless-stopped
+    privileged: true
+    ports:
+      - "0.0.0.0:8080:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+      - /dev/disk/:/dev/disk:ro
+    networks:
+      - 1c-infrastructure
+
+  # ===========================================================================
+  # Grafana (Визуализация и алерты)
+  # ===========================================================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    restart: unless-stopped
+    ports:
+      - "0.0.0.0:3002:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-GrafanaMe123!}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ALERTING_ENABLED: "true"
+      GF_UNIFIED_ALERTING_ENABLED: "true"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - 1c-infrastructure
+    depends_on:
+      - prometheus
+
+  # ===========================================================================
+  # Portainer (Управление Docker)
+  # ===========================================================================
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    restart: unless-stopped
+    ports:
+      - "0.0.0.0:9000:9000"
+      - "0.0.0.0:8000:8000"
+    volumes:
+      - portainer-data:/data
+      - //./pipe/docker_engine://./pipe/docker_engine
+    command:
+      - --host=tcp://host.docker.internal:2375
+    networks:
+      - 1c-infrastructure
+
+  # ===========================================================================
+  # VoceChat Notifications (для мониторинга)
+  # ===========================================================================
+  vocechat-notifications:
+    image: privoce/vocechat-server:latest
+    container_name: vocechat-notifications
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Moscow
+      - ADMIN_EMAIL=monitoring@local
+      - ADMIN_PASSWORD=${VOCECHAT_NOTIFY_PASSWORD:-NotifyMe123!}
+    ports:
+      - "0.0.0.0:3001:3000"
+    volumes:
+      - vocechat-notify-data:/home/vocechat-server/data
+    networks:
+      - 1c-infrastructure
+
+# =============================================================================
+# Volumes
+# =============================================================================
 volumes:
   postgres-data:
-  portainer-data:
+    driver: local
   pgadmin-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+  cadvisor-data:
+    driver: local
+  portainer-data:
+    driver: local
+  vocechat-notify-data:
+    driver: local
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  1c-infrastructure:
+    driver: bridge
