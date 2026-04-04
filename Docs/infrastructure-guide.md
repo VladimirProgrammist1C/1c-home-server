@@ -2,22 +2,25 @@
 
 Полное руководство по развёртыванию и настройке инфраструктуры для 1С-разработки.
 
-> **Версия:** 2.4 (с мониторингом)  
-> **Последнее обновление:** 04.04.2026
+**Версия:** 2.4 (с мониторингом)  
+**Последнее обновление:** 04.04.2026  
+**Автор:** Vladimir Bessonov (bessonov_1989@list.ru)
 
 ---
 
 ## 📋 Содержание
 
-- [Введение](#введение)
-- [Требования](#требования)
-- [Установка](#установка)
-- [Настройка](#настройка)
-- [Мониторинг](#мониторинг)
-- [Управление сервисами](#управление-сервисами)
-- [Диагностика](#диагностика)
-- [Часто задаваемые вопросы](#часто-задаваемые-вопросы)
-- [🔝 Наверх](#содержание)
+1. [Введение](#введение)
+2. [Требования](#требования)
+3. [Установка](#установка)
+4. [Настройка](#настройка)
+5. [Мониторинг](#мониторинг)
+6. [Управление сервисами](#управление-сервисами)
+7. [Диагностика](#диагностика)
+8. [Часто задаваемые вопросы](#часто-задаваемые-вопросы)
+9. [Полезные ресурсы](#полезные-ресурсы)
+
+[🔝 Наверх](#содержание)
 
 ---
 
@@ -25,12 +28,14 @@
 
 Эта инфраструктура предназначена для:
 
-✅ Изолированной разработки и тестирования 1С  
-✅ Приближения к продакшен-среде  
-✅ Автоматического мониторинга и уведомлений  
-✅ Упрощения развёртывания через Docker Compose  
+- ✅ Изолированной разработки и тестирования 1С
+- ✅ Приближения к продакшен-среде
+- ✅ Автоматического мониторинга и уведомлений
+- ✅ Упрощения развёртывания через Docker Compose
 
 **Основное оборудование:** Geekom A9 Max (Ryzen AI 9 HX 370, Windows 11 Pro)
+
+**Время развёртывания:** ~30 минут (при наличии готовых конфигов)
 
 [🔝 Наверх](#содержание)
 
@@ -67,6 +72,11 @@
 3. Перезагрузите компьютер
 4. Запустите Docker Desktop
 
+**Время:** 30 минут  
+**Проблем:** нет ✅
+
+[🔝 Наверх](#содержание)
+
 ### Шаг 2: Клонирование репозитория
 
 ```powershell
@@ -77,6 +87,8 @@ cd E:\1C_Infrastructure
 # Клонируйте репозиторий
 git clone <repository-url> .
 ```
+
+[🔝 Наверх](#содержание)
 
 ### Шаг 3: Настройка переменных окружения
 
@@ -89,11 +101,16 @@ notepad .env
 ```
 
 **Обязательно измените:**
+
 ```env
 DB_PASSWORD=ваш_сложный_пароль
 GRAFANA_ADMIN_PASSWORD=ваш_пароль
 PGADMIN_PASSWORD=ваш_пароль
 ```
+
+⚠️ **Важно:** Файл `.env` добавлен в `.gitignore` — не коммитьте его в репозиторий!
+
+[🔝 Наверх](#содержание)
 
 ### Шаг 4: Запуск инфраструктуры
 
@@ -105,7 +122,7 @@ docker-compose up -d
 docker-compose ps
 ```
 
-✅ Все сервисы должны быть в статусе `Up (healthy)`
+✅ **Все сервисы должны быть в статусе `Up (healthy)`**
 
 [🔝 Наверх](#содержание)
 
@@ -116,15 +133,17 @@ docker-compose ps
 ### 🔷 PostgreSQL
 
 **Подключение:**
-```
-Host: localhost
-Port: 5432
-Database: template1c (или создайте свою)
-Username: postgres
-Password: из `.env`
-```
+
+| Параметр | Значение |
+|----------|----------|
+| Host | `localhost` |
+| Port | `5432` |
+| Database | `template1c` (или создайте свою) |
+| Username | `postgres` |
+| Password | из `.env` |
 
 **Создание базы для 1С:**
+
 ```powershell
 # Подключитесь к PostgreSQL
 docker exec -it postgres-1c psql -U postgres
@@ -136,32 +155,64 @@ CREATE DATABASE "DemoHRMCorpDemo_bot";
 \q
 ```
 
-> ⚠️ **Важно:** Кластер PostgreSQL должен быть инициализирован с русской локалью (`ru_RU.UTF-8`). Без этого 1С не сможет создавать базы!
+⚠️ **Критично:** Кластер PostgreSQL должен быть инициализирован с русской локалью (`ru_RU.UTF-8`). Без этого 1С не сможет создавать базы!
+
+**Решение в `entrypoint.sh`:**
+
+```bash
+export LANG=ru_RU.UTF-8
+export LC_COLLATE=ru_RU.UTF-8
+export LC_CTYPE=ru_RU.UTF-8
+```
+
+[🔝 Наверх](#содержание)
 
 ### 🔷 pgAdmin
 
 1. Откройте [http://localhost:5050](http://localhost:5050)
 2. Войдите:
-   - Email: `admin@admin.com`
-   - Password: из `.env`
+   - **Email:** `admin@admin.com`
+   - **Password:** из `.env`
 3. Добавьте сервер PostgreSQL:
-   - Host: `postgres`
-   - Port: `5432`
-   - Username: `postgres`
-   - Password: из `.env`
+   - **Host:** `postgres`
+   - **Port:** `5432`
+   - **Username:** `postgres`
+   - **Password:** из `.env`
+
+[🔝 Наверх](#содержание)
 
 ### 🔷 Grafana
 
 1. Откройте [http://localhost:3002](http://localhost:3002)
 2. Войдите:
-   - Username: `admin`
-   - Password: из `.env`
+   - **Username:** `admin`
+   - **Password:** из `.env`
 3. Смените пароль при первом входе
-4. **Дашборд "1C Infrastructure Overview"** открывается по умолчанию
+4. Дашборд "1C Infrastructure Overview" открывается по умолчанию
 
 **Алерты уже настроены! Проверьте:**
+
 - Список алертов: [http://localhost:3002/alerting/list](http://localhost:3002/alerting/list)
 - Contact Points: [http://localhost:3002/alerting/notifications](http://localhost:3002/alerting/notifications)
+
+[🔝 Наверх](#содержание)
+
+### 🔷 Portainer
+
+1. Откройте [http://localhost:9000](http://localhost:9000)
+2. Создайте аккаунт при первом входе
+3. Подключение к Docker настроено автоматически
+
+[🔝 Наверх](#содержание)
+
+### 🔷 Tailscale VPN
+
+1. Установите Tailscale на сервер и клиентские устройства
+2. Войдите под одним аккаунтом
+3. Получите IP-адрес устройства (например, `100.74.x.x`)
+4. Подключайтесь к сервисам по этому IP
+
+⚠️ **Важно:** Порты `0.0.0.0` в `docker-compose.yml` безопасны **только при использовании VPN**!
 
 [🔝 Наверх](#содержание)
 
@@ -174,7 +225,7 @@ CREATE DATABASE "DemoHRMCorpDemo_bot";
 ```
 ┌─────────────────┐
 │  Сервисы (10)   │
-└────────┬────────┘
+└────────────────┘
          │
     ┌────▼─────┐
     │ Prometheus│ ← Сбор метрик каждые 30 сек
@@ -189,6 +240,8 @@ CREATE DATABASE "DemoHRMCorpDemo_bot";
     └──────────┘
 ```
 
+[🔝 Наверх](#содержание)
+
 ### 📦 Компоненты мониторинга
 
 | Компонент | Назначение | Порт |
@@ -198,6 +251,8 @@ CREATE DATABASE "DemoHRMCorpDemo_bot";
 | postgres-exporter | Метрики PostgreSQL | 9187 |
 | Blackbox Exporter | HTTP-проверки доступности | 9115 |
 | Grafana | Визуализация, алерты, уведомления | 3002 |
+
+[🔝 Наверх](#содержание)
 
 ### 🔔 Алерты
 
@@ -220,17 +275,22 @@ CREATE DATABASE "DemoHRMCorpDemo_bot";
 | High CPU Usage | CPU > 80% (5 min average) | Высокая загрузка CPU |
 | High Memory Usage | RAM > 1 GB | Высокое потребление памяти |
 
+[🔝 Наверх](#содержание)
+
 ### 📨 Уведомления
 
 **Куда приходят:**
+
 - ✅ VoceChat (локальный чат)
 - 📍 Канал: `#alerts`
 
 **Когда приходят:**
+
 - ⏱️ Через 2 минуты после срабатывания алерта (pending period)
 - ✅ При восстановлении сервиса (resolved)
 
-**Пример уведомления:**
+**Пример уведомления (FIRING):**
+
 ```
 🚨 FIRING ALERTS
 ━━━━━━━━━━━━━━━━━━━━
@@ -243,9 +303,27 @@ CREATE DATABASE "DemoHRMCorpDemo_bot";
 📊 Total: 1 firing, 0 resolved
 ```
 
+**Пример уведомления (RESOLVED):**
+
+```
+✅ RESOLVED ALERTS
+━━━━━━━━━━━━━━━━━━━━
+🟢 *RESOLVED:*
+• pgAdmin Down
+  🟠 pgAdmin Down
+⏰ Duration: 3 min 45 sec
+⏰ Resolved: 11:29:55
+
+━━━━━━━━━━━━━━━━━━━━
+📊 Total: 0 firing, 1 resolved
+```
+
+[🔝 Наверх](#содержание)
+
 ### 🔍 Prometheus Queries
 
 **Полезные запросы:**
+
 ```promql
 # Статус всех сервисов
 up
@@ -269,7 +347,7 @@ count(container_last_seen{name!=""})
 count(ALERTS{alertstate="firing"}) or vector(0)
 ```
 
-Подробнее в [`COMMANDS.md`](../COMMANDS.md#-prometheus-queries)
+Подробнее: [⚡ COMMANDS.md](COMMANDS.md#-prometheus-queries)
 
 [🔝 Наверх](#содержание)
 
@@ -302,6 +380,8 @@ docker-compose logs <service_name> --tail 100
 docker-compose ps
 ```
 
+[🔝 Наверх](#содержание)
+
 ### 🧪 Тестирование алертов
 
 ```powershell
@@ -311,13 +391,27 @@ docker-compose stop pgadmin
 # 2. Подождите 2-3 минуты
 
 # 3. Проверьте VoceChat — должно прийти уведомление
-#    [http://localhost:3001](http://localhost:3001)
+#    http://localhost:3001
 
 # 4. Запустите сервис обратно
 docker-compose start pgadmin
 
 # 5. Проверьте VoceChat — должно прийти RESOLVED
 ```
+
+[🔝 Наверх](#содержание)
+
+### 📱 Управление через Portainer
+
+1. Откройте [http://localhost:9000](http://localhost:9000)
+2. Перейдите: **Containers**
+3. Для каждого контейнера доступны:
+   - ✅ **Start** — запустить
+   - ⏹️ **Stop** — остановить
+   - 🔄 **Restart** — перезапустить
+   - 🗑️ **Delete** — удалить (осторожно!)
+   - 📋 **Logs** — просмотр логов
+   - 💻 **Console** — терминал внутри контейнера
 
 [🔝 Наверх](#содержание)
 
@@ -341,6 +435,8 @@ docker-compose up -d --force-recreate <service_name>
 cat .env
 ```
 
+[🔝 Наверх](#содержание)
+
 ### 🔴 Алерты не приходят
 
 1. Проверьте статус алертов в Grafana: [http://localhost:3002/alerting/list](http://localhost:3002/alerting/list)
@@ -348,11 +444,13 @@ cat .env
 3. Проверьте шаблоны: [http://localhost:3002/alerting/notifications/templates](http://localhost:3002/alerting/notifications/templates)
 4. Проверьте логи Grafana: `docker-compose logs grafana --tail 100`
 
+[🔝 Наверх](#содержание)
+
 ### 🔴 Prometheus не видит метрики
 
 ```powershell
 # 1. Проверьте targets
-#    [http://localhost:9090/targets](http://localhost:9090/targets)
+#    http://localhost:9090/targets
 
 # 2. Проверьте конфигурацию Prometheus
 cat monitoring/prometheus.yml
@@ -364,6 +462,8 @@ docker-compose restart prometheus
 docker-compose logs prometheus --tail 50
 ```
 
+[🔝 Наверх](#содержание)
+
 ### 🔴 Blackbox не проверяет HTTP
 
 ```powershell
@@ -374,9 +474,11 @@ docker-compose logs blackbox-exporter --tail 50
 cat monitoring/blackbox.yml
 
 # 3. Проверьте targets в Prometheus
-#    [http://localhost:9090/targets](http://localhost:9090/targets)
+#    http://localhost:9090/targets
 #    Найдите blackbox-http
 ```
+
+[🔝 Наверх](#содержание)
 
 ### 🔴 PostgreSQL не подключается
 
@@ -409,9 +511,11 @@ CREATE DATABASE "YourDatabaseName";
 \q
 ```
 
+[🔝 Наверх](#содержание)
+
 ### ❓ Как изменить пароль PostgreSQL?
 
-> ⚠️ **Внимание:** Это удалит все данные!
+⚠️ **Внимание:** Это удалит все данные!
 
 ```powershell
 # 1. Остановите PostgreSQL
@@ -426,13 +530,18 @@ docker volume rm 1c-infrastructure_postgres-data
 docker-compose up -d postgres
 ```
 
+[🔝 Наверх](#содержание)
+
 ### ❓ Как изменить порты сервисов?
 
 Отредактируйте `docker-compose.yml`:
+
 ```yaml
 ports:
   - "3003:3002"  # Вместо 3002:3002
 ```
+
+[🔝 Наверх](#содержание)
 
 ### ❓ Как обновить образы Docker?
 
@@ -444,6 +553,8 @@ docker-compose pull
 docker-compose up -d --force-recreate
 ```
 
+[🔝 Наверх](#содержание)
+
 ### ❓ Где хранятся данные?
 
 | Сервис | Хранилище |
@@ -451,6 +562,9 @@ docker-compose up -d --force-recreate
 | PostgreSQL | Docker volume `1c-infrastructure_postgres-data` |
 | Grafana | `./grafana-data` |
 | Prometheus | `./prometheus-data` |
+| pgAdmin | Docker volume `1c-infrastructure_pgadmin-data` |
+
+[🔝 Наверх](#содержание)
 
 ### ❓ Как сделать бэкап PostgreSQL?
 
@@ -458,11 +572,17 @@ docker-compose up -d --force-recreate
 docker exec postgres-1c pg_dump -U postgres template1c > backup.sql
 ```
 
+**Рекомендация:** Используйте **Обновлятор 1С** (Владимир Милькин, helpme1s.ru) — готовое решение с планировщиком заданий Windows.
+
+[🔝 Наверх](#содержание)
+
 ### ❓ Как восстановить PostgreSQL из бэкапа?
 
 ```powershell
 cat backup.sql | docker exec -i postgres-1c psql -U postgres
 ```
+
+[🔝 Наверх](#содержание)
 
 ### ❓ Как очистить неиспользуемые ресурсы Docker?
 
@@ -479,35 +599,90 @@ docker system prune -a --volumes
 
 [🔝 Наверх](#содержание)
 
+### ❓ Как сделать бэкап конфигураций?
+
+```powershell
+# Запустите скрипт бэкапа
+.\Scripts\backup-configs.ps1
+
+# Бэкапы сохраняются в:
+# E:\_BACKUPS\yyyy-MM-dd-stable\
+# E:\1C_Infrastructure\Backups\yyyy-MM-dd-stable\
+```
+
+[🔝 Наверх](#содержание)
+
 ---
 
-## 📞 Поддержка
+## Полезные ресурсы
 
-При возникновении проблем:
+### 📚 Официальная документация
 
-1. Проверьте [`COMMANDS.md`](../COMMANDS.md) — шпаргалка по командам
-2. Изучите раздел [Диагностика](#диагностика)
-3. Проверьте логи сервисов
-4. Проверьте статус алертов в Grafana
+- [Docker Documentation](https://docs.docker.com/)
+- [Prometheus Documentation](https://prometheus.io/docs/)
+- [Grafana Documentation](https://grafana.com/docs/)
+- [PostgreSQL Documentation](https://postgrespro.ru/docs)
+- [1С:Предприятие Documentation](https://users.v8.1c.ru/)
+- [Blackbox Exporter](https://github.com/prometheus/blackbox_exporter)
+
+[🔝 Наверх](#содержание)
+
+### 🛠️ Инструменты
+
+- [Tailscale VPN](https://tailscale.com)
+- [Portainer](https://docs.portainer.io)
+- [Обновлятор 1С](https://helpme1s.ru/obnovlyator-1s-gruppovoe-paketnoe-obnovlenie-vsex-baz-za-odin-raz)
+
+[🔝 Наверх](#содержание)
+
+### 🌐 Ресурсы автора
+
+- **InfoStart:** [Профиль](https://infostart.ru/profile/348559/) — статьи и материалы по 1С
+- **ВКонтакте:** [Сообщество](https://vk.com/club230942526) — "Автоматизация бизнес-процессов"
+- **Rutube:**
+  - [🔧 Автоматизация процессов](https://rutube.ru/plst/889148?r=wd)
+  - [💻 Автоматизация разработки в 1С](https://rutube.ru/plst/858490?r=wd)
+  - [⚙️ Автоматизация администрирования](https://rutube.ru/plst/1269695?r=wd)
+  - [📊 1С:Аналитика](https://rutube.ru/plst/858486?r=wd)
+  - [🔐 Безопасность в 1С](https://rutube.ru/plst/858489?r=wd)
+- **GitHub:** [1c-home-server](https://github.com/VladimirProgrammist1C/1c-home-server)
+
+[🔝 Наверх](#содержание)
+
+### 📄 Документация проекта
+
+| Файл | Описание |
+|------|----------|
+| [📘 infrastructure-guide.md](infrastructure-guide.md) | Полное руководство (этот файл) |
+| [⚡ COMMANDS.md](COMMANDS.md) | Шпаргалка по командам |
+| [🏠 README.md](../README.md) | Быстрый старт |
+
+> 💡 **Полная история проекта** (тайминг, проблемы, инсайты, статистика):  
+> Опубликована в статье на InfoStart:  
+> 🔗 *[DevOps для 1С на практике: как я развёртывал домашний сервер за 14 дней и 32 часа](ссылка-на-статью)*
+
+[🔝 Наверх](#содержание)
 
 ---
 
 ## 📝 Changelog
 
 ### 2026-04-03 (v2.4)
+
 - ✅ Добавлен мониторинг (Grafana + Prometheus)
 - ✅ Добавлен Blackbox Exporter для HTTP-проверок
 - ✅ Добавлен postgres-exporter для метрик PostgreSQL
 - ✅ Настроены алерты с уведомлениями в VoceChat
-- ✅ Добавлена документация (COMMANDS.md, TIMING.md, SUMMARY.md)
-- ✅ Обновлён README.md с контактами и ресурсами
+- ✅ Обновлена документация
 
 ### 2026-03-30 (v2.3)
+
 - ✅ Tailscale VPN для безопасного удалённого доступа
 - ✅ Финальный docker-compose.yml с оркестрацией
 - ✅ Подключение 1С:Предприятие к PostgreSQL в Docker
 
 ### 2026-03-27 (v2.2)
+
 - ✅ Финализация СУБД (PostgreSQL + Portainer + pgAdmin)
 - ✅ Healthcheck для PostgreSQL
 - ✅ Именованные volumes для переносимости
@@ -516,28 +691,13 @@ docker system prune -a --volumes
 
 ---
 
-## 🔗 Ссылки
+## 📞 Поддержка
 
-### Официальная документация
-- [Docker Documentation](https://docs.docker.com/)
-- [Prometheus Documentation](https://prometheus.io/docs/)
-- [Grafana Documentation](https://grafana.com/docs/)
-- [PostgreSQL Documentation](https://postgrespro.ru/docs)
-- [1С:Предприятие Documentation](https://users.v8.1c.ru/)
+При возникновении проблем:
 
-### Инструменты
-- [Tailscale VPN](https://tailscale.com)
-- [Portainer](https://docs.portainer.io)
-- [Blackbox Exporter](https://github.com/prometheus/blackbox_exporter)
-- [Обновлятор 1С](https://helpme1s.ru/obnovlyator-1s-gruppovoe-paketnoe-obnovlenie-vsex-baz-za-odin-raz)
-
-### Ресурсы автора
-- 📚 [InfoStart профиль](https://infostart.ru/profile/348559/) — статьи и материалы по 1С
-- 💬 [ВКонтакте](https://vk.com/club230942526) — сообщество "Автоматизация бизнес-процессов"
-- 🎥 [Rutube: Автоматизация процессов](https://rutube.ru/plst/889148?r=wd)
-- 🎥 [Rutube: Автоматизация разработки в 1С](https://rutube.ru/plst/858490?r=wd)
-- 🎥 [Rutube: Автоматизация администрирования](https://rutube.ru/plst/1269695?r=wd)
-- 🎥 [Rutube: 1С:Аналитика](https://rutube.ru/plst/858486?r=wd)
-- 🎥 [Rutube: Безопасность в 1С](https://rutube.ru/plst/858489?r=wd)
+1. Проверьте [⚡ COMMANDS.md](COMMANDS.md) — шпаргалка по командам
+2. Изучите раздел [Диагностика](#диагностика)
+3. Проверьте логи сервисов
+4. Проверьте статус алертов в Grafana
 
 [🔝 Наверх](#содержание)
