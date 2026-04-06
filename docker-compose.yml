@@ -1,13 +1,6 @@
-﻿version: '3.8'
-
-# =============================================================================
-# 1C Home Server Infrastructure
-# =============================================================================
+﻿version: '3.9'
 
 services:
-  # ===========================================================================
-  # PostgreSQL 1С (СУБД)
-  # ===========================================================================
   postgres:
     image: postgres:18.1-2.1C-ubuntu2204
     container_name: postgres-1c
@@ -29,6 +22,7 @@ services:
       timeout: 10s
       retries: 5
       start_period: 60s
+
   postgres-exporter:
     image: prometheuscommunity/postgres-exporter:latest
     container_name: postgres-exporter
@@ -36,12 +30,13 @@ services:
     ports:
       - "0.0.0.0:9187:9187"
     environment:
-      DATA_SOURCE_NAME: "postgresql://postgres:123@postgres:5432/postgres?sslmode=disable"
+      DATA_SOURCE_NAME: "postgresql://postgres:${DB_PASSWORD}@postgres:5432/postgres?sslmode=disable"
     depends_on:
       - postgres
     networks:
       - 1c-infrastructure
       - monitoring
+
   blackbox-exporter:
     image: prom/blackbox-exporter:latest
     container_name: blackbox-exporter
@@ -55,9 +50,6 @@ services:
       - ./monitoring/blackbox.yml:/etc/blackbox/blackbox.yml:ro
     command: ['--config.file=/etc/blackbox/blackbox.yml']
 
-  # ===========================================================================
-  # pgAdmin 4 (Администрирование PostgreSQL)
-  # ===========================================================================
   pgadmin:
     image: dpage/pgadmin4:latest
     container_name: pgadmin4
@@ -77,9 +69,6 @@ services:
       - 1c-infrastructure
       - monitoring
 
-  # =============================================================================
-  # Prometheus - сбор и хранение метрик (ОПТИМИЗИРОВАН)
-  # =============================================================================
   prometheus:
     image: prom/prometheus:latest
     container_name: prometheus
@@ -118,9 +107,6 @@ services:
       - monitoring
       - 1c-infrastructure
 
-  # ===========================================================================
-  # cAdvisor (Метрики контейнеров)
-  # ===========================================================================
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
     container_name: cadvisor
@@ -138,9 +124,6 @@ services:
       - 1c-infrastructure
       - monitoring
 
-  # ===========================================================================
-  # Grafana (Визуализация и алерты)
-  # ===========================================================================
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
@@ -163,9 +146,6 @@ services:
     depends_on:
       - prometheus
 
-  # ===========================================================================
-  # Portainer (Управление Docker)
-  # ===========================================================================
   portainer:
     image: portainer/portainer-ce:latest
     container_name: portainer
@@ -182,9 +162,6 @@ services:
       - 1c-infrastructure
       - monitoring
 
-  # ===========================================================================
-  # VoceChat Notifications (для мониторинга)
-  # ===========================================================================
   vocechat-notifications:
     image: privoce/vocechat-server:latest
     container_name: vocechat-notifications
@@ -203,9 +180,6 @@ services:
       - 1c-infrastructure
       - monitoring
 
-# =============================================================================
-# Volumes
-# =============================================================================
 volumes:
   postgres-data:
     driver: local
@@ -222,11 +196,8 @@ volumes:
   vocechat-notify-data:
     driver: local
 
-# =============================================================================
-# Networks
-# =============================================================================
 networks:
   1c-infrastructure:
     driver: bridge
-  monitoring:           # ← Добавь эту строку
-    driver: bridge      # ← И эту
+  monitoring:
+    driver: bridge
