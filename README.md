@@ -78,8 +78,6 @@ docker-compose ps  # все должны быть "Up (healthy)"
 |------|----------|
 | [📘 infrastructure-guide.md](Docs/infrastructure-guide.md) | Полное руководство по развёртыванию и настройке |
 | [⚡ COMMANDS.md](Docs/COMMANDS.md) | Шпаргалка по командам (Docker, PowerShell, Prometheus) |
-| [⏱️ TIMING.md](Docs/TIMING.md) | Детальный учёт времени проекта |
-| [📋 SUMMARY.md](Docs/SUMMARY.md) | Итоги и инсайты проекта |
 
 [🔝 Наверх](#-1c-infrastructure)
 
