@@ -1,27 +1,34 @@
-🏠 1C Infrastructure
+# 🏠 1C Infrastructure
+
+<a name="top"></a>
+
 Домашний сервер для 1С-разработки на базе Geekom A9 Max (Ryzen AI 9 HX 370, Windows 11 Pro).
 
 ![InfoStart Logo](https://infostart.ru/bitrix/templates/sandbox_empty/assets/tpl/abo/img/logo.svg)
 
 Цель: Изолированная среда для 1С + мониторинг + автоматические бэкапы + безопасный доступ.
 
-📋 Содержание
-- [🧩 Сервисы](#-сервисы)
-- [🚀 Быстрый старт](#-быстрый-старт)
-- [📊 Мониторинг](#-мониторинг)
-- [📚 Документация](#-документация)
-- [🔗 Опубликовано на InfoStart](#-опубликовано-на-infostart)
-- [🔐 Безопасность](#-безопасность)
-- [🛠️ Диагностика](#️-диагностика)
-- [📈 Статус проекта](#-статус-проекта)
-- [👤 Автор и контакты](#-автор-и-контакты)
-- [🌐 Полезные ресурсы](#-полезные-ресурсы)
+## 📋 Содержание
 
-[🔝 Наверх](#-1c-infrastructure)
+- [🏠 1C Infrastructure](#-1c-infrastructure)
+  - [📋 Содержание](#-содержание)
+  - [🧩 Сервисы ](#-сервисы-)
+  - [🚀 Быстрый старт ](#-быстрый-старт-)
+  - [📊 Мониторинг ](#-мониторинг-)
+  - [📚 Документация ](#-документация-)
+  - [🔗 Опубликовано на InfoStart ](#-опубликовано-на-infostart-)
+  - [🔐 Безопасность ](#-безопасность-)
+  - [🛠️ Диагностика ](#️-диагностика-)
+  - [📈 Статус проекта ](#-статус-проекта-)
+  - [👤 Автор и контакты ](#-автор-и-контакты-)
+  - [🌐 Полезные ресурсы ](#-полезные-ресурсы-)
+
+[🔝 Наверх](#top)
 
 ---
 
-🧩 Сервисы
+## 🧩 Сервисы <a name="services"></a>
+
 | Сервис | Порт | Статус |
 |--------|------|--------|
 | PostgreSQL 1С | 5432 | ✅ UP |
@@ -36,11 +43,12 @@
 
 Доступ: `localhost` или `100.x.x.x` через Tailscale VPN.
 
-[🔝 Наверх](#-1c-infrastructure)
+[🔝 Наверх](#top)
 
 ---
 
-🚀 Быстрый старт
+## 🚀 Быстрый старт <a name="quick-start"></a>
+
 ```powershell
 # 1. Клонировать репозиторий
 git clone <repo-url>
@@ -57,44 +65,55 @@ docker-compose up -d
 docker-compose ps  # все должны быть "Up (healthy)"
 ```
 
-[🔝 Наверх](#-1c-infrastructure)
+[🔝 Наверх](#top)
 
 ---
 
-📊 Мониторинг
-- **Дашборд:** [Grafana](http://localhost:3002) (открывается по умолчанию)
-- **Алерты:** 9 правил, уведомления в VoceChat
-- **Проверки:** HTTP, CPU, RAM, PostgreSQL
-- **Счётчик проблем:** `count(ALERTS{alertstate="firing"}) or vector(0)`
+## 📊 Мониторинг <a name="monitoring"></a>
 
-Подробнее: [📘 Руководство по мониторингу](Docs/infrastructure-guide.md#мониторинг)
+Дашборд: [Grafana](http://localhost:3002) (открывается по умолчанию)
 
-[🔝 Наверх](#-1c-infrastructure)
+Алерты: 9 правил, уведомления в VoceChat
+
+Проверки: HTTP, CPU, RAM, PostgreSQL
+
+Счётчик проблем: `count(ALERTS{alertstate="firing"}) or vector(0)`
+
+Подробнее: [📘 Руководство по мониторингу](Docs/infrastructure-guide.md#monitoring)
+
+[🔝 Наверх](#top)
 
 ---
 
-📚 Документация
+## 📚 Документация <a name="documentation"></a>
+
 | Файл | Описание |
 |------|----------|
 | [📘 infrastructure-guide.md](Docs/infrastructure-guide.md) | Полное руководство по развёртыванию и настройке |
 | [⚡ COMMANDS.md](Docs/COMMANDS.md) | Шпаргалка по командам (Docker, PowerShell, Prometheus) |
 
-[🔝 Наверх](#-1c-infrastructure)
+💡 **Полная история проекта** (тайминг, проблемы, инсайты, статистика):  
+Опубликована в статье на InfoStart:  
+🔗 [DevOps для 1С на практике: как я развёртывал домашний сервер за 14 дней и 32 часа](https://infostart.ru/1c/articles/2658161/)
+
+[🔝 Наверх](#top)
 
 ---
 
-🔗 Опубликовано на InfoStart
+## 🔗 Опубликовано на InfoStart <a name="infostart-article"></a>
+
 ![InfoStart Logo](https://infostart.ru/bitrix/templates/sandbox_empty/assets/tpl/abo/img/logo.svg)
 
 📰 **[DevOps для 1С на практике: как я развёртывал домашний сервер за 14 дней и 32 часа](https://infostart.ru/1c/articles/2658161/)**
 
-> Практический гайд по применению DevOps-практик в 1С-инфраструктуре: контейнеризация СУБД, инфраструктура как код, мониторинг с алертами, автоматические бэкапы. Разбираю подводные камни и делюсь готовыми конфигами.
+Практический гайд по применению DevOps-практик в 1С-инфраструктуре: контейнеризация СУБД, инфраструктура как код, мониторинг с алертами, автоматические бэкапы. Разбираю подводные камни и делюсь готовыми конфигами.
 
-[🔝 Наверх](#-1c-infrastructure)
+[🔝 Наверх](#top)
 
 ---
 
-🔐 Безопасность
+## 🔐 Безопасность <a name="security"></a>
+
 ✅ **Что сделано:**
 - Пароли хранятся в `.env` (файл добавлен в `.gitignore`)
 - Именованные Docker volumes (не bind mounts)
@@ -105,11 +124,12 @@ docker-compose ps  # все должны быть "Up (healthy)"
 
 ⚠️ **Важно:** Порты `0.0.0.0` в `docker-compose.yml` безопасны только при использовании VPN (Tailscale)!
 
-[🔝 Наверх](#-1c-infrastructure)
+[🔝 Наверх](#top)
 
 ---
 
-🛠️ Диагностика
+## 🛠️ Диагностика <a name="troubleshooting"></a>
+
 ```powershell
 # Логи конкретного сервиса
 docker-compose logs <service_name> --tail 50
@@ -125,13 +145,14 @@ docker-compose restart <service_name>
 docker-compose ps
 ```
 
-Подробнее: [🔍 Раздел диагностики](Docs/infrastructure-guide.md#диагностика)
+Подробнее: [🔍 Раздел диагностики](Docs/infrastructure-guide.md#troubleshooting)
 
-[🔝 Наверх](#-1c-infrastructure)
+[🔝 Наверх](#top)
 
 ---
 
-📈 Статус проекта
+## 📈 Статус проекта <a name="project-status"></a>
+
 | Показатель | Значение |
 |------------|----------|
 | Версия | 2.4 (стабильная) |
@@ -142,21 +163,23 @@ docker-compose ps
 
 📊 Полная статистика и инсайты — в статье на InfoStart: [🔗 Читать статью](https://infostart.ru/1c/articles/2658161/)
 
-[🔝 Наверх](#-1c-infrastructure)
+[🔝 Наверх](#top)
 
 ---
 
-👤 Автор и контакты
+## 👤 Автор и контакты <a name="author"></a>
+
 **Vladimir Bessonov**  
 📧 bessonov_1989@list.ru  
 🔗 [GitHub](https://github.com/VladimirProgrammist1C/1c-home-server)  
 📄 Лицензия: MIT
 
-[🔝 Наверх](#-1c-infrastructure)
+[🔝 Наверх](#top)
 
 ---
 
-🌐 Полезные ресурсы
+## 🌐 Полезные ресурсы <a name="resources"></a>
+
 📚 **Публикации и статьи:**
 - [InfoStart: Статья проекта](https://infostart.ru/1c/articles/2658161/) — DevOps для 1С на практике
 - [InfoStart: Профиль автора](https://infostart.ru/profile/348559/) — другие статьи и материалы по 1С
@@ -179,4 +202,4 @@ docker-compose ps
 - [Grafana](https://grafana.com)
 - [Blackbox Exporter](https://github.com/prometheus/blackbox_exporter)
 
-[🔝 Наверх](#-1c-infrastructure)
+[🔝 Наверх](#top)
