@@ -92,7 +92,7 @@ docker-compose ps  # все должны быть "Up (healthy)"
 | [📘 infrastructure-guide.md](Docs/infrastructure-guide.md) | Полное руководство по развёртыванию и настройке |
 | [⚡ COMMANDS.md](Docs/COMMANDS.md) | Шпаргалка по командам (Docker, PowerShell, Prometheus) |
 
-💡 **Полная история проекта** (тайминг, проблемы, инсайты, статистика) опубликована в статье на InfoStart → [см. ниже](#-опубликовано-на-infostart)
+💡 **Полная история проекта** (тайминг, проблемы, инсайты, статистика) опубликована в статье на InfoStart → [см. ниже](#infostart-article)
 
 [🔝 Наверх](#top)
 
