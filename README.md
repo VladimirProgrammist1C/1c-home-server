@@ -1,27 +1,26 @@
 # 🏠 1C Infrastructure
-
 <a name="top"></a>
 
-Домашний сервер для 1С-разработки на базе Geekom A9 Max (Ryzen AI 9 HX 370, Windows 11 Pro).
+Домашний сервер для 1С-разработки на базе **Geekom A9 Max** (Ryzen AI 9 HX 370, Windows 11 Pro).
 
 ![InfoStart Logo](https://infostart.ru/bitrix/templates/sandbox_empty/assets/tpl/abo/img/logo.svg)
 
-Цель: Изолированная среда для 1С + мониторинг + автоматические бэкапы + безопасный доступ.
+> **Цель:** Изолированная среда для 1С + мониторинг + автоматические бэкапы + безопасный доступ.
 
-## 📋 Содержание
+---
 
-- [🏠 1C Infrastructure](#-1c-infrastructure)
-  - [📋 Содержание](#-содержание)
-  - [🧩 Сервисы ](#-сервисы-)
-  - [🚀 Быстрый старт ](#-быстрый-старт-)
-  - [📊 Мониторинг ](#-мониторинг-)
-  - [📚 Документация ](#-документация-)
-  - [🔗 Опубликовано на InfoStart ](#-опубликовано-на-infostart-)
-  - [🔐 Безопасность ](#-безопасность-)
-  - [🛠️ Диагностика ](#️-диагностика-)
-  - [📈 Статус проекта ](#-статус-проекта-)
-  - [👤 Автор и контакты ](#-автор-и-контакты-)
-  - [🌐 Полезные ресурсы ](#-полезные-ресурсы-)
+## 📋 Содержание <a name="table-of-contents"></a>
+- [🧩 Сервисы](#services)
+- [🚀 Быстрый старт](#quick-start)
+- [🌐 Доступ к сервисам](#access)
+- [📊 Мониторинг и алерты](#monitoring)
+- [📚 Документация](#documentation)
+- [🔗 Опубликовано на InfoStart](#infostart-article)
+- [🔐 Безопасность](#security)
+- [🛠️ Диагностика](#diagnostics)
+- [📈 Статус проекта](#status)
+- [👤 Автор и контакты](#author)
+- [🌐 Полезные ресурсы](#resources)
 
 [🔝 Наверх](#top)
 
@@ -29,19 +28,17 @@
 
 ## 🧩 Сервисы <a name="services"></a>
 
-| Сервис | Порт | Статус |
-|--------|------|--------|
-| PostgreSQL 1С | 5432 | ✅ UP |
-| pgAdmin | 5050 | ✅ UP |
-| Portainer | 9000 | ✅ UP |
-| Grafana | 3002 | ✅ UP |
-| Prometheus | 9090 | ✅ UP |
-| VoceChat | 3001 | ✅ UP |
-| Blackbox Exporter | 9115 | ✅ UP |
-| postgres-exporter | 9187 | ✅ UP |
-| cAdvisor | 8080 | ✅ UP |
-
-Доступ: `localhost` или `100.x.x.x` через Tailscale VPN.
+| Сервис | Порт | Назначение | Статус |
+|--------|------|-----------|--------|
+| 🐘 PostgreSQL 1C | `5432` | СУБД для 1С:Предприятие | ✅ |
+| 🗄️ pgAdmin | `5050` | Управление базами данных | ✅ |
+| 🐳 Portainer | `9000` | Оркестрация Docker | ✅ |
+| 📊 Prometheus | `9090` | Сбор метрик | ✅ |
+| 📈 Grafana | `3002` | Дашборды и алерты | ✅ |
+| 🔍 Blackbox Exporter | `9115` | HTTP-проверки доступности | ✅ |
+| 📦 postgres-exporter | `9187` | Метрики PostgreSQL | ✅ |
+| 💻 cAdvisor | `8080` | Метрики хоста | ✅ |
+| 🔔 VoceChat-Notify | `3001` | Канал для системных уведомлений (`#alerts`) | ✅ |
 
 [🔝 Наверх](#top)
 
@@ -49,37 +46,79 @@
 
 ## 🚀 Быстрый старт <a name="quick-start"></a>
 
+### Предварительные требования
+- ✅ Windows 11 Pro x64
+- ✅ Docker Desktop + WSL2
+- ✅ Git
+- ✅ Tailscale (для защищённого доступа)
+
+### Установка за 5 минут
+
 ```powershell
 # 1. Клонировать репозиторий
-git clone <repo-url>
-cd 1C_Infrastructure
+git clone <repository-url> E:\1C_Infrastructure
+cd E:\1C_Infrastructure
 
-# 2. Настроить пароли (обязательно!)
-copy .env.example .env
+# 2. Настроить пароли
+Copy-Item .env.example .env
 notepad .env  # ← изменить пароли!
 
-# 3. Запустить все сервисы
+# 3. Запустить инфраструктуру
 docker-compose up -d
 
 # 4. Проверить статус
-docker-compose ps  # все должны быть "Up (healthy)"
+docker-compose ps  # все сервисы должны быть "Up (healthy)"
 ```
 
 [🔝 Наверх](#top)
 
 ---
 
-## 📊 Мониторинг <a name="monitoring"></a>
+## 🌐 Доступ к сервисам <a name="access"></a>
 
-Дашборд: [Grafana](http://localhost:3002) (открывается по умолчанию)
+**Локально:** `localhost` или `127.0.0.1`  
+**Удалённо (безопасно):** `100.x.x.x` через **Tailscale VPN**
 
-Алерты: 9 правил, уведомления в VoceChat
+> 🔐 **Tailscale** обеспечивает **безопасный защищённый доступ** через зашифрованный туннель (WireGuard). Проброс портов не требуется.  
+> 🖥️ **RDP** используется непосредственно для удалённого подключения, но весь трафик идёт через защищённый туннель Tailscale.
 
-Проверки: HTTP, CPU, RAM, PostgreSQL
+[🔝 Наверх](#top)
 
-Счётчик проблем: `count(ALERTS{alertstate="firing"}) or vector(0)`
+---
 
-Подробнее: [📘 Руководство по мониторингу](Docs/infrastructure-guide.md#monitoring)
+## 📊 Мониторинг и алерты <a name="monitoring"></a>
+
+**Grafana:** [http://localhost:3002](http://localhost:3002) (открывается по умолчанию)
+
+### Алерты (12 правил)
+
+#### 🏗️ Инфраструктура (9 правил)
+| Алерт | Критичность | Условие |
+|-------|-------------|---------|
+| 🔴 PostgreSQL is DOWN | Critical | `pg_up == 0` |
+| 🔴 Portainer Down | Critical | HTTP проверка не прошла |
+| 🔴 pgAdmin Down | Critical | HTTP проверка не прошла |
+| 🔴 Grafana is DOWN | Critical | HTTP проверка не прошла |
+| 🔴 Prometheus is DOWN | Critical | `up{job="prometheus"} == 0` |
+| 🔴 VoceChat-Notify is DOWN | Critical | HTTP проверка не прошла |
+| 🔴 cAdvisor is DOWN | Critical | `up{job="cadvisor"} == 0` |
+| 🟡 High CPU Usage | Warning | `> 80%` (5 min avg) |
+| 🟡 High Memory Usage | Warning | `> 1 GB` |
+
+#### 📊 Бизнес-метрики 1С (3 правила)
+| Алерт | Критичность | Условие |
+|-------|-------------|---------|
+| 🟡 High Database Size | Warning | База > 5 ГБ |
+| 🟡 High 1C Connections | Warning | Всего подключений > 10 |
+| 🟡 High User Connections | Warning | Подключений юзера > 2 |
+
+### 📨 Уведомления
+| Канал | Назначение | Когда приходит |
+|-------|-----------|----------------|
+| 💬 **VoceChat-Notify** | Основной канал (`#alerts`) | Через 2 мин после срабатывания + при восстановлении |
+| 📧 **Email** | Резервный канал | Только при недоступности VoceChat-Notify (`VoceChatNotifyDown`) |
+
+**Формат:** читаемый текст на русском с эмодзи и порогами.
 
 [🔝 Наверх](#top)
 
@@ -89,10 +128,11 @@ docker-compose ps  # все должны быть "Up (healthy)"
 
 | Файл | Описание |
 |------|----------|
-| [📘 infrastructure-guide.md](Docs/infrastructure-guide.md) | Полное руководство по развёртыванию и настройке |
+| [📘 infrastructure-guide.md](Docs/infrastructure-guide.md) | Полное руководство по развёртыванию |
 | [⚡ COMMANDS.md](Docs/COMMANDS.md) | Шпаргалка по командам (Docker, PowerShell, Prometheus) |
 
-💡 **Полная история проекта** (тайминг, проблемы, инсайты, статистика) опубликована в статье на InfoStart → [см. ниже](#infostart-article)
+💡 **Полная история проекта** (тайминг, проблемы, инсайты, статистика):  
+Опубликована в статье на InfoStart → [см. ниже](#infostart-article)
 
 [🔝 Наверх](#top)
 
@@ -102,9 +142,10 @@ docker-compose ps  # все должны быть "Up (healthy)"
 
 ![InfoStart Logo](https://infostart.ru/bitrix/templates/sandbox_empty/assets/tpl/abo/img/logo.svg)
 
-📰 **[DevOps для 1С на практике: как я развернул домашний сервер за 14 дней и 32 часа](https://infostart.ru/1c/articles/2658161/)**
-
+📰 **DevOps для 1С на практике: как я развернул домашний сервер за 14 дней и 32 часа**  
 Практический гайд по применению DevOps-практик в 1С-инфраструктуре: контейнеризация СУБД, инфраструктура как код, мониторинг с алертами, автоматические бэкапы. Разбираю подводные камни и делюсь готовыми конфигами.
+
+🔗 [Читать статью на InfoStart](https://infostart.ru/1c/articles/2658161/)
 
 [🔝 Наверх](#top)
 
@@ -112,35 +153,36 @@ docker-compose ps  # все должны быть "Up (healthy)"
 
 ## 🔐 Безопасность <a name="security"></a>
 
-✅ **Что сделано:**
-- Пароли хранятся в `.env` (файл добавлен в `.gitignore`)
-- Именованные Docker volumes (не bind mounts)
-- Healthcheck для PostgreSQL
-- Private GitHub репозиторий + 2FA
-- Tailscale VPN (шифрование WireGuard)
-- Нет открытых портов в публичный интернет
+- ✅ Пароли хранятся в `.env` (добавлен в `.gitignore`)
+- ✅ Именованные Docker volumes вместо bind mounts
+- ✅ **Tailscale VPN** для **безопасного защищённого доступа** (шифрование WireGuard)
+- ✅ GitHub 2FA включена
+- ✅ Нет открытых портов в публичный интернет
 
-⚠️ **Важно:** Порты `0.0.0.0` в `docker-compose.yml` безопасны только при использовании VPN (Tailscale)!
+> ⚠️ **Никогда не коммитьте**: `.env`, файлы с паролями, бэкапы, модели ИИ, базы данных.
 
 [🔝 Наверх](#top)
 
 ---
 
-## 🛠️ Диагностика <a name="troubleshooting"></a>
+## 🛠️ Диагностика <a name="diagnostics"></a>
 
+### Сервис не запускается?
 ```powershell
-# Логи конкретного сервиса
-docker-compose logs <service_name> --tail 50
-
-# Перезапустить сервис
-docker-compose restart <service_name>
-
-# Проверить алерты
-# → Grafana: http://localhost:3002/alerting/list
-# → Prometheus: http://localhost:9090/targets
-
-# Проверить статус всех сервисов
+# 1. Проверить логи
+docker-compose logs <service_name> --tail 100
+# 2. Проверить статус
 docker-compose ps
+# 3. Пересоздать контейнер
+docker-compose up -d --force-recreate <service_name>
+```
+
+### Алерты не срабатывают?
+```powershell
+# 1. Проверить targets в Prometheus
+# → http://localhost:9090/targets
+# 2. Перезапустить Prometheus
+docker-compose restart prometheus
 ```
 
 Подробнее: [🔍 Раздел диагностики](Docs/infrastructure-guide.md#troubleshooting)
@@ -149,17 +191,17 @@ docker-compose ps
 
 ---
 
-## 📈 Статус проекта <a name="project-status"></a>
+## 📈 Статус проекта <a name="status"></a>
 
 | Показатель | Значение |
 |------------|----------|
-| Версия | 2.4 (стабильная) |
-| Сервисов | 10 |
-| Алертов | 9/9 работают |
-| Время разработки | ~32 часа за 14 дней |
-| Последнее обновление | 04.04.2026 |
+| Версия | 2.5 (стабильная) |
+| Сервисов | 9 |
+| Алертов | 12/12 работают |
+| Время разработки | ~55 часов за 26 дней |
+| Последнее обновление | 16.04.2026 |
 
-📊 Полная статистика и инсайты — в статье на InfoStart: [🔗 Читать статью](https://infostart.ru/1c/articles/2658161/)
+📊 **Полная статистика и инсайты** — в статье на InfoStart 🔗 [[ссылка выше](#infostart-article)]
 
 [🔝 Наверх](#top)
 

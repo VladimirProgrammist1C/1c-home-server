@@ -1,9 +1,18 @@
-# 📋 1C Infrastructure - Шпаргалка по командам
+# 📋 1C Infrastructure — Шпаргалка по командам
+<a name="top"></a>
+
+**Версия:** 2.5 (Email + 1C Metrics)  
+**Последнее обновление:** 16.04.2026  
+**Алертов:** 12/12 работают (9 инфра + 3 бизнес-метрики 1С)  
+**Период:** 22.03–16.04.2026 (26 дней)
+
+[🔝 Наверх](#top)
+
+---
 
 ## 🔌 Управление сервисами
 
 ### Все сервисы
-
 ```powershell
 # Запустить все
 docker-compose up -d
@@ -21,126 +30,54 @@ docker-compose logs --tail 100
 docker-compose ps
 ```
 
-### PostgreSQL (СУБД)
-
+### Отдельные сервисы
 ```powershell
-# Остановить
-docker-compose stop postgres
+# PostgreSQL (СУБД для 1С)
+docker-compose stop postgres-1c
+docker-compose start postgres-1c
+docker-compose restart postgres-1c
+docker-compose logs postgres-1c --tail 50
 
-# Запустить
-docker-compose start postgres
-
-# Перезапустить
-docker-compose restart postgres
-
-# Просмотр логов
-docker-compose logs postgres --tail 50
-
-# Подключиться к БД
-docker exec -it postgres-1c psql -U postgres -d template1c
-
-# Проверить список БД
-docker exec -it postgres-1c psql -U postgres -c "\l"
-```
-
-### pgAdmin (веб-интерфейс PostgreSQL)
-
-```powershell
-# Остановить
-docker-compose stop pgadmin
-
-# Запустить
-docker-compose start pgadmin
-
-# Перезапустить
+# pgAdmin (веб-интерфейс БД)
 docker-compose restart pgadmin
-
-# Просмотр логов
 docker-compose logs pgadmin --tail 50
-```
 
-### Prometheus (сбор метрик)
+# Portainer (оркестрация)
+docker-compose restart portainer
+docker-compose logs portainer --tail 50
 
-```powershell
-# Остановить
-docker-compose stop prometheus
-
-# Запустить
-docker-compose start prometheus
-
-# Перезапустить
+# Prometheus (сбор метрик)
 docker-compose restart prometheus
-
-# Просмотр логов
 docker-compose logs prometheus --tail 50
-```
 
-### Grafana (дашборды и алерты)
-
-```powershell
-# Остановить
-docker-compose stop grafana
-
-# Запустить
-docker-compose start grafana
-
-# Перезапустить
+# Grafana (дашборды + алерты)
 docker-compose restart grafana
-
-# Просмотр логов
 docker-compose logs grafana --tail 50
-```
 
-### Blackbox Exporter (HTTP проверки)
-
-```powershell
-# Перезапустить
+# Blackbox Exporter (HTTP-проверки)
 docker-compose restart blackbox-exporter
-
-# Просмотр логов
 docker-compose logs blackbox-exporter --tail 50
-```
 
-### cAdvisor (мониторинг контейнеров)
+# postgres-exporter (метрики СУБД)
+docker-compose restart postgres-exporter
+docker-compose logs postgres-exporter --tail 50
 
-```powershell
-# Перезапустить
+# cAdvisor (метрики контейнеров)
 docker-compose restart cadvisor
-
-# Просмотр логов
 docker-compose logs cadvisor --tail 50
+
+# VoceChat-Notify (уведомления)
+docker-compose restart vocechat-notify
+docker-compose logs vocechat-notify --tail 50
 ```
 
-### VoceChat Notifications
-
-```powershell
-# Перезапустить
-docker-compose restart vocechat-notifications
-
-# Просмотр логов
-docker-compose logs vocechat-notifications --tail 50
-```
+[🔝 Наверх](#top)
 
 ---
 
-## 🔗 Полезные URL
-
-| Сервис | URL | Логин/Пароль |
-|--------|-----|--------------|
-| **Grafana** | http://localhost:3002 | admin / GrafanaMe123! |
-| **Prometheus** | http://localhost:9090 | - |
-| **pgAdmin** | http://localhost:5050 | admin / admin |
-| **Portainer** | http://localhost:9000 | admin / (из .env) |
-| **cAdvisor** | http://localhost:8080 | - |
-| **VoceChat** | http://localhost:3001 | - |
-| **Blackbox Exporter** | http://localhost:9115 | - |
-
----
-
-## 📊 Prometheus Queries
+## 🔍 Prometheus Queries
 
 ### Проверка доступности сервисов
-
 ```promql
 # Все сервисы
 up
@@ -157,13 +94,12 @@ up{job="postgres-exporter"}
 probe_success{job="blackbox-http"}
 
 # Конкретный HTTP endpoint
-probe_success{instance="http://grafana:3000/api/health"}
-probe_success{instance="http://pgadmin4:80"}
+probe_success{instance="http://grafana:3002/api/health"}
+probe_success{instance="http://pgadmin:5050"}
 probe_success{instance="http://portainer:9000"}
 ```
 
-### Метрики контейнеров (cAdvisor)
-
+### Метрики контейнеров
 ```promql
 # CPU использование (в процентах)
 rate(container_cpu_usage_seconds_total{name!=""}[5m]) * 100
@@ -171,15 +107,14 @@ rate(container_cpu_usage_seconds_total{name!=""}[5m]) * 100
 # Использование памяти (в байтах)
 container_memory_usage_bytes{name!=""}
 
-# Использование памяти (в MB)
+# Использование памяти (в МБ)
 container_memory_usage_bytes{name!=""} / 1000000
 
 # Last seen контейнера (проверка активности)
 container_last_seen{name="grafana"}
 ```
 
-### Метрики PostgreSQL
-
+### PostgreSQL метрики
 ```promql
 # Версия PostgreSQL
 pg_static
@@ -187,45 +122,91 @@ pg_static
 # Количество транзакций
 pg_stat_database_xact_commit
 
-# Размер БД
+# Размер БД (в байтах)
 pg_database_size_bytes
+
+# Статус подключения
+pg_up
 ```
+
+### 📊 Бизнес-метрики 1С
+```promql
+# Размер базы 1С (ГБ)
+onec_database_size_gb_gigabytes{database="DemoHRMCorpDemo_bot"}
+
+# Общее количество подключений к 1С
+onec_total_connections
+
+# Активных сессий одного пользователя
+onec_user_connections
+```
+
+[🔝 Наверх](#top)
 
 ---
 
-## 🚨 Алерты
+## 🚨 Алерты (12 правил)
 
-### Список алертов
-
+### 🏗️ Инфраструктура (9 правил)
 | Алерт | Query | Порог | Описание |
 |-------|-------|-------|----------|
-| **PostgreSQL is DOWN** | `pg_up` | `IS EQUAL TO 0` | PostgreSQL недоступен |
-| **Portainer Down** | `probe_success{instance="http://portainer:9000"}` | `IS BELOW 1` | Portainer недоступен |
-| **pgAdmin Down** | `probe_success{instance="http://pgadmin4:80"}` | `IS BELOW 1` | pgAdmin недоступен |
-| **Grafana is DOWN** | `probe_success{instance="http://grafana:3000/api/health"}` | `IS BELOW 1` | Grafana недоступна |
-| **Prometheus is DOWN** | `up{job="prometheus"}` | `IS BELOW 1` | Prometheus недоступен |
-| **VoceChat Notifications** | `probe_success{instance="http://vocechat-notifications:3000"}` | `IS BELOW 1` | VoceChat недоступен |
-| **cAdvisor is DOWN** | `up{job="cadvisor"}` | `IS BELOW 1` | cAdvisor недоступен |
-| **High CPU Usage** | `rate(container_cpu_usage_seconds_total{name!=""}[5m]) * 100` | `IS ABOVE 80` | CPU > 80% |
-| **High Memory Usage** | `container_memory_usage_bytes{name!=""}` | `IS ABOVE 1000000000` | RAM > 1GB |
-| **High Disk Usage** | - | - | ⚠️ Не работает на Docker Desktop |
+| PostgreSQLDown | `pg_up` | `== 0` | Экспортер PostgreSQL не отвечает |
+| PortainerDown | `probe_success{job="blackbox-portainer"}` | `== 0` | HTTP проверка Portainer не пройдена |
+| pgAdminDown | `probe_success{job="blackbox-pgadmin"}` | `== 0` | HTTP проверка pgAdmin не пройдена |
+| GrafanaDown | `probe_success{job="blackbox-grafana"}` | `== 0` | HTTP проверка Grafana не пройдена |
+| PrometheusDown | `up{job="prometheus"}` | `== 0` | Сам Prometheus недоступен |
+| VoceChatNotifyDown | `probe_success{job="blackbox-vocechat"}` | `== 0` | HTTP проверка VoceChat не пройдена |
+| cAdvisorDown | `up{job="cadvisor"}` | `== 0` | Экспортер метрик контейнеров недоступен |
+| HighCPUUsage | `rate(container_cpu_usage_seconds_total{name!=""}[5m]) * 100` | `> 80` | Загрузка CPU выше 80% (среднее за 5 мин) |
+| HighMemoryUsage | `container_memory_usage_bytes{name!=""} / 1000000` | `> 1024` | Потребление RAM контейнером > 1 ГБ |
+
+### 📊 Бизнес-метрики 1С (3 правила)
+| Алерт | Query | Порог | Описание |
+|-------|-------|-------|----------|
+| HighDatabaseSize | `onec_database_size_gb_gigabytes{database="DemoHRMCorpDemo_bot"}` | `> 5` | Размер базы 1С превысил 5 ГБ |
+| High1CConnections | `onec_total_connections` | `> 10` | Общее количество подключений к 1С > 10 |
+| HighUserConnections | `onec_user_connections` | `> 2` | Активных сессий одного пользователя > 2 |
 
 ### Тестирование алертов
-
 ```powershell
 # Остановить сервис → подождать 2-3 минуты → проверить VoceChat
 docker-compose stop pgadmin
 
 # Запустить обратно
 docker-compose start pgadmin
+
+# Проверить алерты в Grafana
+# → http://localhost:3002/alerting/list
 ```
+
+[🔝 Наверх](#top)
 
 ---
 
-## 🐛 Диагностика
+## 📧 Email Fallback
+
+Email используется **только** при падении VoceChat (`VoceChatNotifyDown`).
+
+```powershell
+# Проверить настройки SMTP
+cat grafana.ini
+
+# Перезапустить Grafana для применения настроек SMTP
+docker-compose restart grafana
+
+# Протестировать отправку письма (через Grafana UI)
+# → Alerting → Contact points → Email Critical → Test
+```
+
+> ⚠️ **Важно:** Файл `grafana.ini` добавлен в `.gitignore` — не коммитьте пароли!
+
+[🔝 Наверх](#top)
+
+---
+
+## 🔧 Диагностика
 
 ### Проверка логов
-
 ```powershell
 # Логи конкретного сервиса
 docker-compose logs <service_name> --tail 100 -f
@@ -235,7 +216,6 @@ docker-compose logs <service_name> --since 10m
 ```
 
 ### Проверка сети
-
 ```powershell
 # Проверить network
 docker network ls
@@ -247,7 +227,6 @@ docker exec prometheus nslookup grafana
 ```
 
 ### Проверка volumes
-
 ```powershell
 # Список volumes
 docker volume ls
@@ -256,37 +235,7 @@ docker volume ls
 docker volume inspect 1c-infrastructure_postgres-data
 ```
 
----
-
-## 🔧 Конфигурация
-
-### Основные файлы
-
-| Файл | Путь |
-|------|------|
-| **docker-compose.yml** | `E:\1C_Infrastructure\docker-compose.yml` |
-| **Prometheus config** | `E:\1C_Infrastructure\monitoring\prometheus.yml` |
-| **Blackbox config** | `E:\1C_Infrastructure\monitoring\blackbox.yml` |
-| **Environment** | `E:\1C_Infrastructure\.env` |
-| **Grafana templates** | `E:\1C_Infrastructure\grafana\provisioning\alerting\` |
-
-### Перезагрузка конфигурации
-
-```powershell
-# Prometheus (после изменения prometheus.yml)
-docker-compose restart prometheus
-
-# Grafana (после изменения алертов)
-docker-compose restart grafana
-
-# Blackbox (после изменения blackbox.yml)
-docker-compose restart blackbox-exporter
-```
-
----
-
-## 📝 Полезные команды Docker
-
+### Очистка (осторожно!)
 ```powershell
 # Очистка stopped контейнеров
 docker container prune
@@ -304,19 +253,113 @@ docker system df
 docker system prune -a --volumes
 ```
 
+[🔝 Наверх](#top)
+
 ---
 
 ## 🔐 Переменные окружения
 
-Основные пароли хранятся в `.env`
+Основные пароли хранятся в `.env`:
+
+```powershell
+# Скопировать пример
+Copy-Item .env.example .env
+
+# Редактировать
+notepad .env
+
+# Проверить, что .env в .gitignore
+git check-ignore .env
+```
+
+> ⚠️ **Никогда не коммитьте `.env`!**
+
+[🔝 Наверх](#top)
+
+---
+
+## 📁 Основные файлы
+
+| Файл | Путь |
+|------|------|
+| `docker-compose.yml` | `E:\1C_Infrastructure\docker-compose.yml` |
+| `prometheus.yml` | `E:\1C_Infrastructure\monitoring\prometheus.yml` |
+| `blackbox.yml` | `E:\1C_Infrastructure\monitoring\blackbox.yml` |
+| `alerts.yml` | `E:\1C_Infrastructure\monitoring\prometheus\alerts.yml` |
+| `grafana.ini` | `E:\1C_Infrastructure\grafana.ini` |
+| `.env` | `E:\1C_Infrastructure\.env` |
+| `.gitignore` | `E:\1C_Infrastructure\.gitignore` |
+
+### Перезагрузка конфигурации
+```powershell
+# Prometheus (после изменения prometheus.yml)
+docker-compose restart prometheus
+
+# Grafana (после изменения алертов)
+docker-compose restart grafana
+
+# Blackbox (после изменения blackbox.yml)
+docker-compose restart blackbox-exporter
+```
+
+[🔝 Наверх](#top)
+
+---
+
+## 🔗 Полезные URL
+
+| Сервис | URL | Логин/Пароль |
+|--------|-----|--------------|
+| Grafana | [http://localhost:3002](http://localhost:3002) | admin / из `.env` |
+| Prometheus | [http://localhost:9090](http://localhost:9090) | — |
+| pgAdmin | [http://localhost:5050](http://localhost:5050) | admin@local / из `.env` |
+| Portainer | [http://localhost:9000](http://localhost:9000) | admin / из `.env` |
+| cAdvisor | [http://localhost:8080](http://localhost:8080) | — |
+| VoceChat-Notify | [http://localhost:3001](http://localhost:3001) | — |
+| Blackbox Exporter | [http://localhost:9115](http://localhost:9115) | — |
+
+[🔝 Наверх](#top)
+
+---
+
+## 📚 Документация проекта
+
+| Файл | Описание |
+|------|----------|
+| [📘 infrastructure-guide.md](infrastructure-guide.md) | Полное руководство по развёртыванию |
+| [🏠 README.md](../README.md) | Быстрый старт (титульная страница) |
+| **TIMING.md** | Детальный учёт времени (в `_Private/`) |
+| **SUMMARY.md** | Ретроспектива проекта (в `_Private/`) |
+
+> 💡 **Полная история проекта** (тайминг, проблемы, инсайты):  
+> Опубликована в статье на InfoStart:  
+> 🔗 [DevOps для 1С на практике](https://infostart.ru/1c/articles/2658161/)
+
+[🔝 Наверх](#top)
+
+---
+
+## 📊 Статистика проекта
+
+- **Период:** 22.03–16.04.2026 (26 дней)
+- **Общее время:** ~73 часа 20 мин (включая эксперимент с HTTP-сервисом)
+- **Публичное время:** ~55 часов (без эксперимента)
+- **Сервисов:** 9
+- **Алертов:** 12/12 (9 инфра + 3 бизнес-метрики 1С)
+- **Статья:** [InfoStart](https://infostart.ru/1c/articles/2658161/)
+
+[🔝 Наверх](#top)
 
 ---
 
 ## 📞 Поддержка
 
 При проблемах:
-1. Проверить логи: `docker-compose logs --tail 100`
+
+1. Проверить логи: `docker-compose logs <service> --tail 100`
 2. Проверить статус: `docker-compose ps`
 3. Перезапустить сервис: `docker-compose restart <service>`
-4. Проверить алерты: http://localhost:3002/alerting/list
-5. Проверить Prometheus targets: http://localhost:9090/targets
+4. Проверить алерты: [http://localhost:3002/alerting/list](http://localhost:3002/alerting/list)
+5. Проверить Prometheus targets: [http://localhost:9090/targets](http://localhost:9090/targets)
+
+[🔝 Наверх](#top)
