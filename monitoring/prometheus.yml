@@ -1,53 +1,68 @@
-﻿global:
-  scrape_interval: 30s          # Увеличен с 15s для снижения нагрузки
+﻿# =============================================================================
+# Prometheus Configuration for 1C Home Server Infrastructure
+# Version: 2.5 (Universal 1C Monitoring via postgres-exporter)
+# Last updated: 12.04.2026
+# =============================================================================
+
+global:
+  scrape_interval: 30s          # Сбор метрик каждые 30 секунд
   scrape_timeout: 10s
-  evaluation_interval: 30s      # Увеличен с 15s
+  evaluation_interval: 30s      # Проверка правил алертов каждые 30 секунд
   external_labels:
     monitor: '1c-home-server'
+    environment: 'development'
 
-# Правила алертов
+# =============================================================================
+# Правила алертов (путь относительно контейнера Prometheus)
+# =============================================================================
 rule_files:
-  - "alerts.yml"
+  - "/etc/prometheus/alerts.yml"
 
+# =============================================================================
+# Конфигурация сбора метрик (scrape configs)
+# =============================================================================
 scrape_configs:
+
+  # ---------------------------------------------------------------------------
   # 1. Сам Prometheus (мониторинг самого себя)
+  # ---------------------------------------------------------------------------
   - job_name: 'prometheus'
     static_configs:
       - targets: ['localhost:9090']
-    # Собираем только базовые метрики Prometheus
     metric_relabel_configs:
       - source_labels: [__name__]
         regex: 'prometheus_.*|up|scrape_.*'
         action: keep
 
+  # ---------------------------------------------------------------------------
   # 2. cAdvisor (CPU/Memory контейнеров)
+  # ---------------------------------------------------------------------------
   - job_name: 'cadvisor'
     static_configs:
       - targets: ['cadvisor:8080']
-    # Собираем ТОЛЬКО CPU и Memory (игнорируем сеть, диск и прочее)
     metric_relabel_configs:
       - source_labels: [__name__]
         regex: 'container_cpu_usage_seconds_total|container_memory_usage_bytes|container_last_seen'
         action: keep
-      # # Для будущего: раскомментируй, если нужны сетевые метрики
-      # - source_labels: [__name__]
-      #   regex: 'container_network_receive_bytes_total|container_network_transmit_bytes_total'
-      #   action: keep
       - source_labels: [__name__]
         regex: 'machine_.*'
         action: drop
 
-  # 3. postgres-exporter (метрики PostgreSQL)
+  # ---------------------------------------------------------------------------
+  # 3. postgres-exporter (метрики PostgreSQL + custom queries 1С)
+  # ---------------------------------------------------------------------------
   - job_name: 'postgres-exporter'
     static_configs:
       - targets: ['postgres-exporter:9187']
-    # Собираем только критичные метрики
+    # Собираем только критичные метрики PostgreSQL
     metric_relabel_configs:
       - source_labels: [__name__]
-        regex: 'pg_up|pg_stat_database_.*|pg_database_size_bytes|pg_stat_activity_count'
+        regex: 'pg_up|pg_stat_database_.*|pg_database_size_bytes|pg_stat_activity_count|pg_locks_count|pg_stat_activity_backend_start|onec_.*'
         action: keep
 
-  # 4. Blackbox Exporter (HTTP проверки)
+  # ---------------------------------------------------------------------------
+  # 4. Blackbox Exporter (HTTP проверки доступности сервисов)
+  # ---------------------------------------------------------------------------
   - job_name: 'blackbox-http'
     metrics_path: /probe
     params:
@@ -58,7 +73,6 @@ scrape_configs:
           - http://portainer:9000
           - http://grafana:3000/api/health
           - http://vocechat-notifications:3000
-    # ИСПРАВЛЕНО для Prometheus 3.x: используем target_label вместо target_param
     relabel_configs:
       - source_labels: [__address__]
         regex: (.*)
@@ -68,11 +82,46 @@ scrape_configs:
         regex: (.*)
         target_label: instance
         replacement: ${1}
-      - regex: (.*)
+      - source_labels: [__param_target]
+        regex: (.*)
         target_label: __address__
         replacement: blackbox-exporter:9115
-    # Собираем только probe метрики
     metric_relabel_configs:
       - source_labels: [__name__]
         regex: 'probe_success|probe_duration_seconds|probe_http_status_code'
         action: keep
+
+  # ---------------------------------------------------------------------------
+  # 5. Grafana (метрики самой Grafana)
+  # ---------------------------------------------------------------------------
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana:3000']
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: 'grafana_.*|up|process_.*'
+        action: keep
+
+  # ---------------------------------------------------------------------------
+  # 6. Portainer (метрики через Blackbox)
+  # ---------------------------------------------------------------------------
+  - job_name: 'portainer-metrics'
+    metrics_path: /probe
+    params:
+      module: [http_2xx_or_redirect]
+    static_configs:
+      - targets:
+          - http://portainer:9000/api/status
+    relabel_configs:
+      - source_labels: [__address__]
+        regex: (.*)
+        target_label: __param_target
+        replacement: ${1}
+      - source_labels: [__param_target]
+        regex: (.*)
+        target_label: instance
+        replacement: ${1}
+      - source_labels: [__param_target]
+        regex: (.*)
+        target_label: __address__
+        replacement: blackbox-exporter:9115

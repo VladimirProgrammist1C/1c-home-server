@@ -1,0 +1,198 @@
+# =============================================================================
+# 1C Universal Metrics for postgres-exporter
+# Версия: 2.5 (ФИНАЛЬНАЯ - с учётом ограничений 1С)
+# =============================================================================
+# ⚠️ ОГРАНИЧЕНИЕ: 1С:Предприятие не передаёт application_name в PostgreSQL.
+# Все подключения 1С отображаются как '1C-Client' (нельзя отличить тонкий/веб).
+# =============================================================================
+
+# 1. Детализация подключений (без определения типа клиента 1С)
+onec_connections_detail:
+  query: |
+    SELECT 
+      datname as database,
+      usename as username,
+      CASE 
+        WHEN application_name = 'psql' THEN 'psql'
+        WHEN application_name = 'pgAdmin 4' THEN 'pgAdmin'
+        WHEN application_name = 'postgres_exporter' THEN 'postgres_exporter'
+        WHEN application_name = '' OR application_name IS NULL THEN '1C-Client'
+        ELSE application_name
+      END as app_name,
+      client_addr::text as client_ip,
+      state as status,
+      COUNT(*)::numeric as count
+    FROM pg_stat_activity
+    WHERE datname IN (
+      SELECT datname FROM pg_database
+      WHERE datname NOT IN ('postgres', 'template0', 'template1')
+    )
+    GROUP BY datname, usename, application_name, client_addr, state
+  master: true
+  metrics:
+    - database:
+        usage: "LABEL"
+    - username:
+        usage: "LABEL"
+    - app_name:
+        usage: "LABEL"
+        description: "Application (1C-Client = any 1C connection)"
+    - client_ip:
+        usage: "LABEL"
+        description: "Client IP address"
+    - status:
+        usage: "LABEL"
+        description: "Connection state"
+    - count:
+        usage: "GAUGE"
+        description: "Connection count"
+
+# 2. ВСЕ сеансы пользователей 1С (idle + active)
+onec_user_sessions:
+  query: |
+    SELECT 
+      datname as database,
+      COUNT(*)::numeric as count
+    FROM pg_stat_activity
+    WHERE datname IN (
+      SELECT datname FROM pg_database
+      WHERE datname NOT IN ('postgres', 'template0', 'template1')
+    )
+    AND usename NOT IN ('postgres', 'monitoring_bot')
+    AND backend_type = 'client backend'
+    GROUP BY datname
+  master: true
+  metrics:
+    - database:
+        usage: "LABEL"
+    - count:
+        usage: "GAUGE"
+        description: "Total 1C user sessions"
+
+# 3. Активные сессии (выполнение запросов)
+onec_active_sessions:
+  query: |
+    SELECT 
+      datname as database,
+      COUNT(*)::numeric as count
+    FROM pg_stat_activity
+    WHERE datname IN (
+      SELECT datname FROM pg_database
+      WHERE datname NOT IN ('postgres', 'template0', 'template1')
+    )
+    AND usename NOT IN ('postgres', 'monitoring_bot')
+    AND state = 'active'
+    GROUP BY datname
+  master: true
+  metrics:
+    - database:
+        usage: "LABEL"
+    - count:
+        usage: "GAUGE"
+        description: "Active 1C user sessions"
+
+# 4. Размер базы данных (в гигабайтах)
+onec_database_size_gb:
+  query: |
+    SELECT 
+      datname as database,
+      pg_database_size(datname) / pow(1024, 3)::numeric as gigabytes
+    FROM pg_database
+    WHERE datname IN (
+      SELECT datname FROM pg_database
+      WHERE datname NOT IN ('postgres', 'template0', 'template1')
+    )
+  master: true
+  metrics:
+    - database:
+        usage: "LABEL"
+    - gigabytes:
+        usage: "GAUGE"
+        description: "Database size in gigabytes"
+
+# 5. Всего подключений к базе (включая служебные)
+onec_total_connections:
+  query: |
+    SELECT 
+      datname as database,
+      COUNT(*)::numeric as count
+    FROM pg_stat_activity
+    WHERE datname IN (
+      SELECT datname FROM pg_database
+      WHERE datname NOT IN ('postgres', 'template0', 'template1')
+    )
+    GROUP BY datname
+  master: true
+  metrics:
+    - database:
+        usage: "LABEL"
+    - count:
+        usage: "GAUGE"
+        description: "Total connections to database"
+
+# 6. Блокировки (locks)
+onec_locks:
+  query: |
+    SELECT 
+      datname as database,
+      COUNT(*)::numeric as count
+    FROM pg_locks
+    JOIN pg_database ON pg_locks.database = pg_database.oid
+    WHERE datname IN (
+      SELECT datname FROM pg_database
+      WHERE datname NOT IN ('postgres', 'template0', 'template1')
+    )
+    GROUP BY datname
+  master: true
+  metrics:
+    - database:
+        usage: "LABEL"
+    - count:
+        usage: "GAUGE"
+        description: "Number of locks"
+
+# 7. Длительность сессий (для поиска "зависших")
+onec_session_duration:
+  query: |
+    SELECT 
+      datname as database,
+      usename as user,
+      EXTRACT(EPOCH FROM (NOW() - backend_start))::numeric as seconds
+    FROM pg_stat_activity
+    WHERE datname IN (
+      SELECT datname FROM pg_database
+      WHERE datname NOT IN ('postgres', 'template0', 'template1')
+    )
+    AND usename NOT IN ('postgres', 'monitoring_bot')
+    AND state = 'active'
+  master: true
+  metrics:
+    - database:
+        usage: "LABEL"
+    - user:
+        usage: "LABEL"
+    - seconds:
+        usage: "GAUGE"
+        description: "Session duration in seconds"
+
+# 8. Долгие запросы (> 5 минут)
+onec_long_queries:
+  query: |
+    SELECT 
+      datname as database,
+      COUNT(*)::numeric as count
+    FROM pg_stat_activity
+    WHERE datname IN (
+      SELECT datname FROM pg_database
+      WHERE datname NOT IN ('postgres', 'template0', 'template1')
+    )
+    AND state = 'active'
+    AND NOW() - query_start > INTERVAL '5 minutes'
+    GROUP BY datname
+  master: true
+  metrics:
+    - database:
+        usage: "LABEL"
+    - count:
+        usage: "GAUGE"
+        description: "Queries running longer than 5 minutes"

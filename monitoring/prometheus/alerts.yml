@@ -1,167 +1,225 @@
 ﻿# =============================================================================
 # Алерты для мониторинга инфраструктуры 1С
-# =============================================================================
-# Этот файл подключается в prometheus.yml через rule_files
+# Версия: 3.1 (Русский язык + Labels для всех алертов)
 # =============================================================================
 
 groups:
   # ---------------------------------------------------------------------------
-  # Группа 1: Мониторинг самого Prometheus
+  # Группа 1: Критические сервисы (Prometheus self-monitoring)
   # ---------------------------------------------------------------------------
-  - name: prometheus-self-monitoring
-    interval: 30s
+  - name: infrastructure-critical
     rules:
-      # 🔴 Критический: Prometheus не отвечает
-      - alert: PrometheusDown
-        expr: up{job="prometheus"} == 0
-        for: 1m
-        labels:
-          severity: critical
-          service: prometheus
-        annotations:
-          summary: "🔴 Prometheus is DOWN"
-          description: "Prometheus server is not responding on localhost:9090"
-          runbook_url: "https://github.com/VladimirProgrammist1C/1c-home-server/blob/master/Docs/infrastructure-guide.md#диагностика"
-
-      # 🟡 Предупреждение: Высокое потребление памяти Prometheus
-      - alert: PrometheusHighMemory
-        expr: process_resident_memory_bytes{job="prometheus"} > 512000000  # 512MB
-        for: 5m
-        labels:
-          severity: warning
-          service: prometheus
-        annotations:
-          summary: "⚠️ Prometheus High Memory Usage"
-          description: "Prometheus is using more than 512MB of memory (current: {{ $value | humanize }})"
-
-  # ---------------------------------------------------------------------------
-  # Группа 2: Доступность сервисов (через Blackbox Exporter)
-  # ---------------------------------------------------------------------------
-  - name: service-availability
-    interval: 30s
-    rules:
-      # 🔴 pgAdmin недоступен
-      - alert: PgAdminDown
-        expr: probe_success{instance="http://pgadmin4:80", job="blackbox-http"} == 0
-        for: 2m
-        labels:
-          severity: critical
-          service: pgadmin
-        annotations:
-          summary: "🔴 pgAdmin is DOWN"
-          description: "pgAdmin web interface is not responding"
-
-      # 🔴 Portainer недоступен
-      - alert: PortainerDown
-        expr: probe_success{instance="http://portainer:9000", job="blackbox-http"} == 0
-        for: 2m
-        labels:
-          severity: critical
-          service: portainer
-        annotations:
-          summary: "🔴 Portainer is DOWN"
-          description: "Portainer web interface is not responding"
-
-      # 🔴 Grafana недоступна
-      - alert: GrafanaDown
-        expr: probe_success{instance="http://grafana:3000/api/health", job="blackbox-http"} == 0
-        for: 2m
-        labels:
-          severity: critical
-          service: grafana
-        annotations:
-          summary: "🔴 Grafana is DOWN"
-          description: "Grafana health endpoint is not responding"
-
-      # 🔴 VoceChat недоступен
-      - alert: VoceChatDown
-        expr: probe_success{instance="http://vocechat-notifications:3000", job="blackbox-http"} == 0
-        for: 2m
-        labels:
-          severity: critical
-          service: vocechat
-        annotations:
-          summary: "🔴 VoceChat is DOWN"
-          description: "VoceChat notifications service is not responding"
-
-  # ---------------------------------------------------------------------------
-  # Группа 3: PostgreSQL метрики
-  # ---------------------------------------------------------------------------
-  - name: postgresql-monitoring
-    interval: 30s
-    rules:
-      # 🔴 PostgreSQL не отвечает
       - alert: PostgreSQLDown
         expr: pg_up == 0
         for: 1m
         labels:
           severity: critical
-          service: postgresql
+          threshold: "1"
+          unit: "(должен быть 1)"
         annotations:
-          summary: "🔴 PostgreSQL is DOWN"
-          description: "PostgreSQL exporter cannot connect to database"
+          summary: "🔴 PostgreSQL недоступен"
+          description: "PostgreSQL exporter не может подключиться к базе данных"
 
-      # 🟡 Много активных подключений
-      - alert: PostgreSQLHighConnections
-        expr: pg_stat_activity_count > 50
-        for: 5m
+      - alert: PrometheusDown
+        expr: up{job="prometheus"} == 0
+        for: 1m
         labels:
-          severity: warning
-          service: postgresql
+          severity: critical
+          threshold: "1"
+          unit: "(должен быть 1)"
         annotations:
-          summary: "⚠️ PostgreSQL High Connections"
-          description: "More than 50 active connections (current: {{ $value }})"
+          summary: "🔴 Prometheus недоступен"
+          description: "Сервер Prometheus не отвечает"
+
+      - alert: cAdvisorDown
+        expr: up{job="cadvisor"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          threshold: "1"
+          unit: "(должен быть 1)"
+        annotations:
+          summary: "🔴 cAdvisor недоступен"
+          description: "cAdvisor не отвечает"
 
   # ---------------------------------------------------------------------------
-  # Группа 4: Ресурсы контейнеров (через cAdvisor)
+  # Группа 2: HTTP-проверки (Blackbox Exporter)
   # ---------------------------------------------------------------------------
-  - name: container-resources
-    interval: 30s
+  - name: blackbox-http
     rules:
-      # 🟡 Высокое потребление CPU контейнером
+      - alert: GrafanaDown
+        expr: probe_success{instance="http://grafana:3000/api/health", job="blackbox-http"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          threshold: "1"
+          unit: "(должен быть 1)"
+        annotations:
+          summary: "🔴 Grafana недоступна"
+          description: "Health endpoint Grafana не отвечает"
+
+      - alert: PgAdminDown
+        expr: probe_success{instance="http://pgadmin4:80", job="blackbox-http"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          threshold: "1"
+          unit: "(должен быть 1)"
+        annotations:
+          summary: "🔴 pgAdmin недоступен"
+          description: "Веб-интерфейс pgAdmin не отвечает"
+
+      - alert: PortainerDown
+        expr: probe_success{instance="http://portainer:9000", job="blackbox-http"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          threshold: "1"
+          unit: "(должен быть 1)"
+        annotations:
+          summary: "🔴 Portainer недоступен"
+          description: "Веб-интерфейс Portainer не отвечает"
+
+      - alert: VoceChatDown
+        expr: probe_success{instance="http://vocechat-notifications:3000", job="blackbox-http"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          threshold: "1"
+          unit: "(должен быть 1)"
+        annotations:
+          summary: "🔴 VoceChat недоступен"
+          description: "Сервис уведомлений VoceChat не отвечает"
+
+  # ---------------------------------------------------------------------------
+  # Группа 3: Ресурсы контейнеров (cAdvisor)
+  # ---------------------------------------------------------------------------
+  - name: containers-resources
+    rules:
       - alert: ContainerHighCPU
         expr: rate(container_cpu_usage_seconds_total{name!=""}[5m]) * 100 > 80
         for: 5m
         labels:
           severity: warning
-          service: container
+          threshold: "80"
+          unit: "%"
         annotations:
-          summary: "⚠️ High CPU Usage: {{ $labels.name }}"
-          description: "Container {{ $labels.name }} is using more than 80% CPU (current: {{ $value | printf \"%.2f\" }}%)"
+          summary: "⚠️ Высокая загрузка CPU"
+          description: "Контейнер {{ $labels.name }} использует более 80% CPU (текущее: {{ $value | printf \"%.2f\" }}%)"
 
-      # 🟡 Высокое потребление памяти контейнером
       - alert: ContainerHighMemory
-        expr: container_memory_usage_bytes{name!=""} > 1000000000  # 1GB
+        expr: container_memory_usage_bytes{name!=""} > 1073741824
         for: 5m
         labels:
           severity: warning
-          service: container
+          threshold: "1073741824"
+          unit: "байт (>1 ГБ)"
         annotations:
-          summary: "⚠️ High Memory Usage: {{ $labels.name }}"
-          description: "Container {{ $labels.name }} is using more than 1GB RAM (current: {{ $value | humanize }})"
+          summary: "⚠️ Высокое потребление памяти"
+          description: "Контейнер {{ $labels.name }} использует более 1 ГБ ОЗУ (текущее: {{ $value | humanize }})"
 
   # ---------------------------------------------------------------------------
-  # Группа 5: [ОПЦИОНАЛЬНО] Закомментированные алерты для будущего
+  # Группа 4: Метрики 1С (РАБОЧИЕ)
   # ---------------------------------------------------------------------------
-  # - name: future-alerts
-  #   interval: 30s
-  #   rules:
-  #     # 🔴 Disk usage (не работает на Docker Desktop без node_exporter)
-  #     # - alert: HighDiskUsage
-  #     #   expr: (node_filesystem_size_bytes - node_filesystem_avail_bytes) / node_filesystem_size_bytes * 100 > 85
-  #     #   for: 5m
-  #     #   labels:
-  #     #     severity: warning
-  #     #   annotations:
-  #     #     summary: "⚠️ High Disk Usage"
-  #     #     description: "Disk usage is above 85%"
+  - name: 1c-metrics-working
+    rules:
+      # ✅ Большой размер базы данных
+      - alert: HighDatabaseSize
+        expr: onec_database_size_gb_gigabytes{database="DemoHRMCorpDemo_bot"} > 3
+        for: 1m
+        labels:
+          severity: warning
+          threshold: "3"
+          unit: "ГБ"
+        annotations:
+          summary: "📊 Большой размер базы данных"
+          description: |
+            Размер базы данных превысил допустимый лимит.
+            🔍 Проверить дашборд: http://localhost:3002/d/1c-infrastructure-overview-1?viewPanel=4
+
+      # ✅ Много подключений 1С (общий счётчик)
+      - alert: High1CConnections
+        expr: sum(onec_total_connections_count{database="DemoHRMCorpDemo_bot"}) > 4
+        for: 1m
+        labels:
+          severity: warning
+          threshold: "4"
+          unit: "подключений"
+        annotations:
+          summary: "🔌 Много подключений к 1С"
+          description: "Количество подключений к 1С превышает порог (текущее: {{ $value }})\n🔍 Кто подключен: http://localhost:3002/d/1c-infrastructure-overview-1?viewPanel=3"
+
+      # ✅ Подозрительная активность пользователя (опционально)
+      - alert: HighUserConnections
+        expr: onec_connections_detail_count{database="DemoHRMCorpDemo_bot"} > 2
+        for: 1m
+        labels:
+          severity: warning
+          threshold: "2"
+          unit: "подключений на пользователя"
+        annotations:
+          summary: "⚠️ Подозрительная активность пользователя"
+          description: "Пользователь {{ $labels.username }} ({{ $labels.app_name }}) с IP {{ $labels.client_ip }} имеет {{ $value }} подключений!\n🔍 Проверить панель: http://localhost:3002/d/1c-infrastructure-overview-1?viewPanel=5"
+
+  # ---------------------------------------------------------------------------
+  # Группа 5: [ЗАКОММЕНТИРОВАНО] Метрики будущего
+  # ---------------------------------------------------------------------------
+  # Эти алерты закомментированы, потому что метрики ещё не созданы в postgres-exporter.
+  # Раскомментируй и добавь соответствующие SQL-запросы в custom-queries-1c.yml, когда будешь готов.
   #
-  #     # 🔴 Network errors (требует дополнительных метрик)
-  #     # - alert: NetworkErrors
-  #     #   expr: rate(container_network_receive_errors_total[5m]) > 0
-  #     #   for: 2m
-  #     #   labels:
-  #     #     severity: warning
-  #     #   annotations:
-  #     #     summary: "⚠️ Network Errors Detected"
-  #     #     description: "Network errors detected on container {{ $labels.name }}"
+  # - name: 1c-metrics-future
+  #   rules:
+  #     - alert: 1C_HighSessionCount
+  #       expr: sum(onec_active_sessions) > 10
+  #       for: 5m
+  #       labels:
+  #         severity: warning
+  #         threshold: "10"
+  #         unit: "сессий"
+  #       annotations:
+  #         summary: "⚠️ Высокое количество сессий 1С"
+  #         description: "Более 10 активных сессий 1С (текущее: {{ $value }})"
+  #
+  #     - alert: 1C_LongSession
+  #       expr: max(onec_session_duration_seconds) > 7200
+  #       for: 10m
+  #       labels:
+  #         severity: warning
+  #         threshold: "7200"
+  #         unit: "секунд (>2 часов)"
+  #       annotations:
+  #         summary: "⚠️ Долгая сессия 1С (>2 часов)"
+  #         description: "Пользователь {{ $labels.user }} работает более 2 часов"
+  #
+  #     - alert: 1C_HighLocksCount
+  #       expr: sum(onec_locks_count) > 50
+  #       for: 5m
+  #       labels:
+  #         severity: warning
+  #         threshold: "50"
+  #         unit: "блокировок"
+  #       annotations:
+  #         summary: "⚠️ Много блокировок в 1С"
+  #         description: "Более 50 блокировок в базах 1С (текущее: {{ $value }})"
+  #
+  #     - alert: 1C_LongQueries
+  #       expr: sum(onec_long_queries_count) > 0
+  #       for: 5m
+  #       labels:
+  #         severity: warning
+  #         threshold: "0"
+  #         unit: "запросов"
+  #       annotations:
+  #         summary: "⚠️ Долгие запросы в 1С (>5 мин)"
+  #         description: "{{ $value }} запросов выполняются более 5 минут"
+  #
+  #     - alert: 1C_BackgroundJobErrors
+  #       expr: onec_background_jobs_count_errors > 0
+  #       for: 5m
+  #       labels:
+  #         severity: warning
+  #         threshold: "0"
+  #         unit: "ошибок"
+  #       annotations:
+  #         summary: "⚠️ Ошибки фоновых заданий 1С"
+  #         description: "{{ $value }} фоновых заданий завершились с ошибкой"

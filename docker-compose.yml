@@ -23,6 +23,9 @@ services:
       retries: 5
       start_period: 60s
 
+  # =============================================================================
+  # postgres-exporter (обновлён для custom queries 1С)
+  # =============================================================================
   postgres-exporter:
     image: prometheuscommunity/postgres-exporter:latest
     container_name: postgres-exporter
@@ -31,6 +34,9 @@ services:
       - "0.0.0.0:9187:9187"
     environment:
       DATA_SOURCE_NAME: "postgresql://postgres:${DB_PASSWORD}@postgres:5432/postgres?sslmode=disable"
+      PG_EXPORTER_EXTEND_QUERY_PATH: "/etc/postgres-exporter/custom-queries-1c.yml"
+    volumes:
+      - ./monitoring/custom-queries-1c.yml:/etc/postgres-exporter/custom-queries-1c.yml:ro
     depends_on:
       - postgres
     networks:
@@ -106,6 +112,8 @@ services:
     networks:
       - monitoring
       - 1c-infrastructure
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
@@ -140,6 +148,7 @@ services:
       TZ: Europe/Moscow
     volumes:
       - grafana-data:/var/lib/grafana
+      - ./grafana.ini:/etc/grafana/grafana.ini
     networks:
       - 1c-infrastructure
       - monitoring
