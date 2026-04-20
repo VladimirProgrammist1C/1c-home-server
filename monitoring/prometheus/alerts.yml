@@ -108,15 +108,15 @@ groups:
           description: "Контейнер {{ $labels.name }} использует более 80% CPU (текущее: {{ $value | printf \"%.2f\" }}%)"
 
       - alert: ContainerHighMemory
-        expr: container_memory_usage_bytes{name!=""} > 1073741824
+        expr: container_memory_usage_bytes{name!=""} > 2147483648
         for: 5m
         labels:
           severity: warning
-          threshold: "1073741824"
-          unit: "байт (>1 ГБ)"
+          threshold: "2147483648"
+          unit: "байт (>2 ГБ)"
         annotations:
           summary: "⚠️ Высокое потребление памяти"
-          description: "Контейнер {{ $labels.name }} использует более 1 ГБ ОЗУ (текущее: {{ $value | humanize }})"
+          description: "Контейнер {{ $labels.name }} использует более 2 ГБ ОЗУ (текущее: {{ $value | humanize }})"
 
   # ---------------------------------------------------------------------------
   # Группа 4: Метрики 1С (РАБОЧИЕ)
@@ -151,11 +151,11 @@ groups:
 
       # ✅ Подозрительная активность пользователя (опционально)
       - alert: HighUserConnections
-        expr: onec_connections_detail_count{database="DemoHRMCorpDemo_bot"} > 2
+        expr: onec_connections_detail_count{database="DemoHRMCorpDemo_bot"} > 5
         for: 1m
         labels:
           severity: warning
-          threshold: "2"
+          threshold: "5"
           unit: "подключений на пользователя"
         annotations:
           summary: "⚠️ Подозрительная активность пользователя"

@@ -6,8 +6,8 @@
 Поддерживает несколько бэкапов в день (не перезаписывает существующие).
 .NOTES
 Автор: Vladimir Bessonov
-Версия: 2.2
-Дата: 04.04.2026
+Версия: 2.3 (Добавлен grafana.ini и custom-queries-1c.yml)
+Дата: 16.04.2026
 #>
 
 # ========================================
@@ -24,18 +24,29 @@ $TodayProjectBackup = "$ProjectBackup\$DateStamp"
 
 # Файлы для бэкапа (относительно $ProjectRoot)
 $Files = @(
+    # Основные конфиги
     "docker-compose.yml",
-    ".env",
+    ".env",                  # <-- Секреты (локально), .env.example (для Git)
     ".env.example",
     ".gitignore",
+    
+    # Настройки уведомлений (НЕ в Git!)
+    "grafana.ini",
+    
+    # Документация
     "README.md",
     "Docs/infrastructure-guide.md",
     "Docs/COMMANDS.md",
     "_Private/TIMING.md",
     "_Private/SUMMARY.md",
+    
+    # Мониторинг
     "monitoring/prometheus.yml",
     "monitoring/prometheus/alerts.yml",
     "monitoring/blackbox.yml",
+    "monitoring/custom-queries-1c.yml", # <-- Новые метрики 1С
+    
+    # Скрипты
     "Scripts/backup-configs.ps1"
 )
 
@@ -174,11 +185,12 @@ Write-Host ""
 # ========================================
 Write-Host "⚠️  ВАЖНО: Бэкап содержит чувствительные данные!" -ForegroundColor Red
 Write-Host "   - .env (пароли от СУБД, Grafana, pgAdmin)" -ForegroundColor Yellow
+Write-Host "   - grafana.ini (SMTP пароль)" -ForegroundColor Yellow
 Write-Host "   - _Private/TIMING.md (приватный опыт)" -ForegroundColor Yellow
 Write-Host "   - _Private/SUMMARY.md (приватный опыт)" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "   Не передавайте эти файлы третьим лицам!" -ForegroundColor Red
-Write-Host "   Не коммитьте .env, TIMING.md, SUMMARY.md в Git!" -ForegroundColor Red
+Write-Host "   Не коммитьте папки Backups и _BACKUPS в Git!" -ForegroundColor Red
 Write-Host ""
 
 # ========================================

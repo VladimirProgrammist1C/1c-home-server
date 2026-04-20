@@ -11,16 +11,30 @@ ENV POSTGRES_USER=postgres
 ENV POSTGRES_PASSWORD=postgres
 ENV POSTGRES_DB=template1c
 
+# 1. Устанавливаем базовые пакеты и поддержку локалей
 RUN apt-get update && apt-get install -y \
     wget curl ca-certificates gnupg bzip2 sudo \
     tzdata locales \
     && rm -rf /var/lib/apt/lists/*
 
-RUN sed -i -e 's/# ru_RU.UTF-8 UTF-8/ru_RU.UTF-8 UTF-8/' /etc/locale.gen && \
-    locale-gen ru_RU.UTF-8
+# =============================================================================
+# 2. НАСТРОЙКА ЛОКАЛЕЙ (КРИТИЧНО ДЛЯ 1С И ОБНОВЛЯТОРА)
+# =============================================================================
+
+# А) Генерируем ОБЕ локали (Русскую для данных, Английскую для логов/клиентов)
+# Явный вызов надежнее, чем чтение /etc/locale.gen
+RUN locale-gen ru_RU.UTF-8 en_US.UTF-8
+
+# Б) Устанавливаем ПРИОРИТЕТ: Русская — системная по умолчанию.
+# Это гарантирует, что PostgreSQL при инициализации (initdb) возьмет ru_RU.UTF-8
+RUN update-locale LANG=ru_RU.UTF-8
+
+# В) Задаем ENV переменные для контейнера (дублируем приоритет для запущенных процессов)
 ENV LANG=ru_RU.UTF-8
 ENV LANGUAGE=ru_RU:ru
 ENV LC_ALL=ru_RU.UTF-8
+
+# =============================================================================
 
 RUN useradd -m -s /bin/bash postgres && \
     echo "postgres:postgres" | chpasswd && \
