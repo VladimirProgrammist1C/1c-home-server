@@ -265,7 +265,7 @@ docker-compose restart prometheus
 ## 🌐 Полезные ресурсы <a name="-полезные-ресурсы"></a>
 
 📚 **Публикации и статьи:**
-- ![InfoStart Logo](https://infostart.ru/bitrix/templates/sandbox_empty/assets/tpl/abo/img/logo.svg) [InfoStart: Статья проекта](https://infostart.ru/1c/articles/2658161/) — DevOps для 1С на практике
+- [InfoStart: Статья проекта](https://infostart.ru/1c/articles/2658161/) — DevOps для 1С на практике
 - [InfoStart: Профиль автора](https://infostart.ru/profile/348559/) — другие статьи и материалы по 1С
 
 💬 **Сообщества:**
