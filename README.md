@@ -106,20 +106,31 @@ docker-compose ps # все должны быть "Up (healthy)"
 
 ---
 
-## 👤 Автор и контакты
+## 🌐 Полезные ресурсы <a name="resources"></a>
 
-**Vladimir Bessonov**  
-📧 bessonov_1989@list.ru  
-🔗 GitHub: [@VladimirProgrammist1C](https://github.com/VladimirProgrammist1C)  
+📚 **Публикации и статьи:**
+- [InfoStart: Статья проекта](https://infostart.ru/1c/articles/2658161/) — DevOps для 1С на практике
+- [InfoStart: Профиль автора](https://infostart.ru/profile/348559/) — другие статьи и материалы по 1С
 
-**Полезные ресурсы:**
-- 📚 [InfoStart профиль](https://infostart.ru/profile/348559/) — статьи и материалы по 1С
-- 🎥 [Rutube: Автоматизация бизнес-процессов](https://rutube.ru/plst/889148?r=wd)
-- 🎥 [Rutube: 1С:Аналитика](https://rutube.ru/plst/858486?r=wd)
-- 🎥 [Rutube: Безопасность в 1С](https://rutube.ru/plst/858489?r=wd)
-- 💬 [VK Сообщество](https://vk.com/club230942526)
+💬 **Сообщества:**
+- [ВКонтакте: "Автоматизация бизнес-процессов"](https://vk.com/club230942526)
+
+🎥 **Rutube плейлисты:**
+- [🔧 Автоматизация процессов](https://rutube.ru/plst/889148?r=wd)
+- [💻 Автоматизация разработки в 1С](https://rutube.ru/plst/858490?r=wd)
+- [⚙️ Автоматизация администрирования](https://rutube.ru/plst/1269695?r=wd)
+- [📊 1С:Аналитика](https://rutube.ru/plst/858486?r=wd)
+- [🔐 Безопасность при работе в 1С](https://rutube.ru/plst/858489?r=wd)
+
+🔗 **Официальная документация:**
+- [1С:ИТС releases](https://releases.1c.ru)
+- [PostgreSQL docs](https://postgrespro.ru/docs)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop)
+- [Prometheus](https://prometheus.io)
+- [Grafana](https://grafana.com)
+- [Blackbox Exporter](https://github.com/prometheus/blackbox_exporter)
 
 **Лицензия:** MIT  
 **Время развёртывания:** ~30 минут  
 **Последнее обновление:** 25.04.2026
-```
+
