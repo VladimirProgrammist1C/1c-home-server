@@ -2,14 +2,15 @@
 
 > **Автоматическая отправка уведомлений в VoceChat при приёме новых сотрудников в 1С:ЗУП 3.1**
 
-**Версия:** 2.0.0  
-**Дата:** 02.05.2026  
+**Версия:** 3.0.0  
+**Дата:** 03.05.2026  
 **Автор:** Владимир Бессонов  
-**Статус:** 
-⏳ (в разработке) Этап III: Документирование журнала уведомлений
+**Статус:** завершен
+
+✅ (завершен) Этап III: Документирование журнала уведомлений
 ✅ 05_JOURNAL_REQUIREMENTS.md — Готово
 ✅ 06_ARCHITECTURAL_DECISION_JOURNAL.md — Готово
-⏳ 07_TECHNICAL_SPECIFICATION_JOURNAL.md — В разработке
+✅ 07_TECHNICAL_SPECIFICATION_JOURNAL.md — Готово
 
 ✅ (завершен) Этап II: Журнал уведомлений
 Обработка, интерфейс, управление очередью, права доступа
@@ -95,10 +96,10 @@ HTTP-сервис, регламентное задание, регистр оч�
 | [📋 01_BUSINESS_REQUIREMENTS.md](docs/01_BUSINESS_REQUIREMENTS.md) | Бизнес-требования (видение заказчика) | ✅ Готово |
 | [🏗 02_ARCHITECTURAL_DECISION.md](docs/02_ARCHITECTURAL_DECISION.md) | Архитектурное решение (ADR) | ✅ Готово |
 | [📘 03_TECHNICAL-SPECIFICATION.md](docs/03_TECHNICAL-SPECIFICATION.md) | Техническая спецификация (алгоритмы, метаданные, тесты) | ✅ Готово |
-| [🔧 04_ADMIN_GUIDE.md](docs/04_ADMIN_GUIDE.md) | Руководство администратора | ⏳ В разработке |
+| [🔧 04_ADMIN_GUIDE.md](docs/04_ADMIN_GUIDE.md) | Руководство администратора | ✅ Готово |
 | [📋 05_JOURNAL_REQUIREMENTS.md](docs/05_JOURNAL_REQUIREMENTS.md) | Бизнес-требования: Журнал уведомлений | ✅ Готово |
 | [🏗 06_ARCHITECTURAL_DECISION_JOURNAL.md](docs/06_ARCHITECTURAL_DECISION_JOURNAL.md) | Архитектурное решение: Журнал уведомлений (ADR) | ✅ Готово |
-| [📘 07_TECHNICAL_SPECIFICATION_JOURNAL.md](docs/07_TECHNICAL_SPECIFICATION_JOURNAL.md) | Техническая спецификация: Журнал уведомлений | ⏳ В разработке |
+| [📘 07_TECHNICAL_SPECIFICATION_JOURNAL.md](docs/07_TECHNICAL_SPECIFICATION_JOURNAL.md) | Техническая спецификация: Журнал уведомлений | ✅ Готово |
 
 ---
 
