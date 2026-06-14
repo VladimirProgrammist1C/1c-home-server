@@ -1,0 +1,139 @@
+﻿[2026-06-14 17:34:02] [INFO] Запуск в боевом режиме
+[2026-06-14 17:34:07] [INFO] === ЭТАП 1: КОНФИГИ ПРОЕКТА ===
+[2026-06-14 17:34:07] [INFO] Начало копирования конфигов проекта
+[2026-06-14 17:34:08] [INFO] Запуск robocopy...
+[2026-06-14 17:34:32] [SUCCESS] Конфиги проекта скопированы (код: 1)
+[2026-06-14 17:34:45] [INFO] === ЭТАП 3: КОНФИГИ POSTGRESQL ===
+[2026-06-14 17:34:45] [INFO] Начало бэкапа конфигов PostgreSQL
+[2026-06-14 17:34:45] [INFO] Копирование postgresql.conf...
+[2026-06-14 17:34:46] [SUCCESS]   OK (31.73 КБ)
+[2026-06-14 17:34:46] [INFO] Копирование pg_hba.conf...
+[2026-06-14 17:34:46] [SUCCESS]   OK (5.64 КБ)
+[2026-06-14 17:34:46] [INFO] Копирование pg_ident.conf...
+[2026-06-14 17:34:46] [SUCCESS]   OK (2.62 КБ)
+[2026-06-14 17:34:46] [INFO] Копирование PG_VERSION...
+[2026-06-14 17:34:46] [SUCCESS]   OK (3 Б)
+[2026-06-14 17:34:46] [SUCCESS] Скопировано 4 из 4 файлов конфигурации (39.99 КБ)
+[2026-06-14 17:34:52] [INFO] === ЭТАП 2: НЕ-1С БАЗЫ POSTGRESQL ===
+[2026-06-14 17:34:52] [INFO] Начало бэкапа не-1С баз данных
+[2026-06-14 17:34:52] [SUCCESS] Whitelist найден: 7 баз
+[2026-06-14 17:34:52] [INFO] Используем whitelist: postgres, gitea, vocechat_notify, analytics, grafana, prometheus, portainer
+[2026-06-14 17:34:53] [INFO]   ✓ Добавлена из whitelist: postgres (7.47 МБ)
+[2026-06-14 17:34:53] [INFO]   ✓ Добавлена из whitelist: gitea (15.15 МБ)
+[2026-06-14 17:34:53] [WARNING]   ⚠️  База из whitelist не найдена в СУБД: vocechat_notify
+[2026-06-14 17:34:53] [WARNING]   ⚠️  База из whitelist не найдена в СУБД: analytics
+[2026-06-14 17:34:53] [WARNING]   ⚠️  База из whitelist не найдена в СУБД: grafana
+[2026-06-14 17:34:53] [WARNING]   ⚠️  База из whitelist не найдена в СУБД: prometheus
+[2026-06-14 17:34:53] [WARNING]   ⚠️  База из whitelist не найдена в СУБД: portainer
+[2026-06-14 17:34:53] [SUCCESS] Найдено 2 не-1С база(ы)
+[2026-06-14 17:35:21] [INFO] Сохранение всех не-1С баз
+[2026-06-14 17:35:21] [INFO] Начало сохранения базы: postgres (7.47 МБ)
+[2026-06-14 17:35:21] [INFO] Создание дампа базы: postgres
+[2026-06-14 17:35:22] [INFO] Дамп создан: 4.55 КБ
+[2026-06-14 17:35:22] [INFO] Сжатие дампа (это может занять несколько минут)...
+[2026-06-14 17:35:23] [INFO] Архив переименован: temp_postgres.sql.gz → postgres.sql.gz
+[2026-06-14 17:35:23] [INFO] Архив создан: 1017 Б
+[2026-06-14 17:35:23] [INFO] Проверка целостности архива...
+[2026-06-14 17:35:24] [SUCCESS] База postgres сохранена: 1017 Б (сжатие 7706.4x, время: 3с)
+[2026-06-14 17:35:24] [INFO] Начало сохранения базы: gitea (15.15 МБ)
+[2026-06-14 17:35:24] [INFO] Создание дампа базы: gitea
+[2026-06-14 17:35:25] [INFO] Дамп создан: 505.91 КБ
+[2026-06-14 17:35:25] [INFO] Сжатие дампа (это может занять несколько минут)...
+[2026-06-14 17:35:26] [INFO] Архив переименован: temp_gitea.sql.gz → gitea.sql.gz
+[2026-06-14 17:35:26] [INFO] Архив создан: 30.34 КБ
+[2026-06-14 17:35:26] [INFO] Проверка целостности архива...
+[2026-06-14 17:35:27] [SUCCESS] База gitea сохранена: 30.34 КБ (сжатие 511.2x, время: 3с)
+[2026-06-14 17:35:27] [SUCCESS] Все не-1С базы сохранены
+[2026-06-14 17:35:40] [INFO] === ЭТАП 4: DOCKER VOLUMES И BIND MOUNTS ===
+[2026-06-14 17:35:40] [INFO] Начало бэкапа Docker volumes и bind mounts
+[2026-06-14 17:35:41] [INFO]   PostgreSQL: 10.19 ГБ
+[2026-06-14 17:35:42] [INFO]   pgAdmin: 3.09 МБ
+[2026-06-14 17:35:42] [INFO]   Grafana: 53.04 МБ
+[2026-06-14 17:35:43] [INFO]   Prometheus: 273.91 МБ
+[2026-06-14 17:35:44] [INFO]   Portainer: 541.74 КБ
+[2026-06-14 17:35:45] [INFO]   Gitea (репозитории): 528.04 КБ
+[2026-06-14 17:35:45] [INFO]   VoceChat-Notify: 35.39 МБ
+[2026-06-14 17:35:46] [INFO]   Аналитика: 143.88 МБ
+[2026-06-14 17:35:46] [INFO]   VoceChat (семейный) (bind): 73.93 МБ
+[2026-06-14 17:35:46] [SUCCESS] Найдено 9 volume(s)/bind mount(s)
+[2026-06-14 17:35:50] [INFO] Начало архивации: VoceChat (семейный) (73.93 МБ) [9/9]
+[2026-06-14 17:35:50] [INFO] Создание архива: bind-vocechat
+[2026-06-14 17:35:50] [INFO] Тип: bind mount, путь: E:\vocechat\data
+[2026-06-14 17:35:50] [INFO] Команда: docker run --rm -v E:\vocechat\data:/source -v D:\Docker_Backups\Backup_2026-06-14_17-34-02\Volumes:/backup alpine tar czf /backup/bind-vocechat.tar.gz -C /source .
+[2026-06-14 17:35:55] [INFO] Архив создан: 64.14 МБ
+[2026-06-14 17:35:55] [INFO] Проверка целостности архива...
+[2026-06-14 17:35:57] [SUCCESS] Volume VoceChat (семейный) заархивирован: 64.14 МБ (время: 7с)
+[2026-06-14 17:36:04] [INFO] Начало архивации: Аналитика (143.88 МБ) [8/9]
+[2026-06-14 17:36:04] [INFO] Создание архива: 1c_infrastructure_analytics-data
+[2026-06-14 17:36:04] [INFO] Тип: Docker volume, имя: 1c_infrastructure_analytics-data
+[2026-06-14 17:36:04] [INFO] Команда: docker run --rm -v 1c_infrastructure_analytics-data:/volume -v D:\Docker_Backups\Backup_2026-06-14_17-34-02\Volumes:/backup alpine tar czf /backup/1c_infrastructure_analytics-data.tar.gz -C /volume .
+[2026-06-14 17:36:08] [INFO] Архив создан: 13.59 МБ
+[2026-06-14 17:36:08] [INFO] Проверка целостности архива...
+[2026-06-14 17:36:10] [SUCCESS] Volume Аналитика заархивирован: 13.59 МБ (время: 6с)
+[2026-06-14 17:36:14] [INFO] Начало архивации: VoceChat-Notify (35.39 МБ) [7/9]
+[2026-06-14 17:36:14] [INFO] Создание архива: 1c_infrastructure_vocechat-notify-data
+[2026-06-14 17:36:14] [INFO] Тип: Docker volume, имя: 1c_infrastructure_vocechat-notify-data
+[2026-06-14 17:36:14] [INFO] Команда: docker run --rm -v 1c_infrastructure_vocechat-notify-data:/volume -v D:\Docker_Backups\Backup_2026-06-14_17-34-02\Volumes:/backup alpine tar czf /backup/1c_infrastructure_vocechat-notify-data.tar.gz -C /volume .
+[2026-06-14 17:36:16] [INFO] Архив создан: 13.12 МБ
+[2026-06-14 17:36:16] [INFO] Проверка целостности архива...
+[2026-06-14 17:36:17] [SUCCESS] Volume VoceChat-Notify заархивирован: 13.12 МБ (время: 3с)
+[2026-06-14 17:36:21] [INFO] Начало архивации: Gitea (репозитории) (528.04 КБ) [6/9]
+[2026-06-14 17:36:21] [INFO] Создание архива: 1c_infrastructure_gitea-data
+[2026-06-14 17:36:21] [INFO] Тип: Docker volume, имя: 1c_infrastructure_gitea-data
+[2026-06-14 17:36:21] [INFO] Команда: docker run --rm -v 1c_infrastructure_gitea-data:/volume -v D:\Docker_Backups\Backup_2026-06-14_17-34-02\Volumes:/backup alpine tar czf /backup/1c_infrastructure_gitea-data.tar.gz -C /volume .
+[2026-06-14 17:36:22] [INFO] Архив создан: 31.14 КБ
+[2026-06-14 17:36:22] [INFO] Проверка целостности архива...
+[2026-06-14 17:36:23] [SUCCESS] Volume Gitea (репозитории) заархивирован: 31.14 КБ (время: 2с)
+[2026-06-14 17:36:26] [INFO] Начало архивации: Portainer (541.74 КБ) [5/9]
+[2026-06-14 17:36:26] [INFO] Создание архива: 1c_infrastructure_portainer-data
+[2026-06-14 17:36:26] [INFO] Тип: Docker volume, имя: 1c_infrastructure_portainer-data
+[2026-06-14 17:36:26] [INFO] Команда: docker run --rm -v 1c_infrastructure_portainer-data:/volume -v D:\Docker_Backups\Backup_2026-06-14_17-34-02\Volumes:/backup alpine tar czf /backup/1c_infrastructure_portainer-data.tar.gz -C /volume .
+[2026-06-14 17:36:27] [INFO] Архив создан: 72.04 КБ
+[2026-06-14 17:36:27] [INFO] Проверка целостности архива...
+[2026-06-14 17:36:28] [SUCCESS] Volume Portainer заархивирован: 72.04 КБ (время: 2с)
+[2026-06-14 17:36:31] [INFO] Начало архивации: Prometheus (273.91 МБ) [4/9]
+[2026-06-14 17:36:31] [INFO] Создание архива: 1c_infrastructure_prometheus-data
+[2026-06-14 17:36:31] [INFO] Тип: Docker volume, имя: 1c_infrastructure_prometheus-data
+[2026-06-14 17:36:31] [INFO] Команда: docker run --rm -v 1c_infrastructure_prometheus-data:/volume -v D:\Docker_Backups\Backup_2026-06-14_17-34-02\Volumes:/backup alpine tar czf /backup/1c_infrastructure_prometheus-data.tar.gz -C /volume .
+[2026-06-14 17:36:37] [INFO] Архив создан: 81.52 МБ
+[2026-06-14 17:36:37] [INFO] Проверка целостности архива...
+[2026-06-14 17:36:40] [SUCCESS] Volume Prometheus заархивирован: 81.52 МБ (время: 9с)
+[2026-06-14 17:36:43] [INFO] Начало архивации: Grafana (53.04 МБ) [3/9]
+[2026-06-14 17:36:43] [INFO] Создание архива: 1c_infrastructure_grafana-data
+[2026-06-14 17:36:43] [INFO] Тип: Docker volume, имя: 1c_infrastructure_grafana-data
+[2026-06-14 17:36:43] [INFO] Команда: docker run --rm -v 1c_infrastructure_grafana-data:/volume -v D:\Docker_Backups\Backup_2026-06-14_17-34-02\Volumes:/backup alpine tar czf /backup/1c_infrastructure_grafana-data.tar.gz -C /volume .
+[2026-06-14 17:36:46] [INFO] Архив создан: 20.99 МБ
+[2026-06-14 17:36:46] [INFO] Проверка целостности архива...
+[2026-06-14 17:36:48] [SUCCESS] Volume Grafana заархивирован: 20.99 МБ (время: 5с)
+[2026-06-14 17:36:50] [INFO] Начало архивации: pgAdmin (3.09 МБ) [2/9]
+[2026-06-14 17:36:50] [INFO] Создание архива: 1c_infrastructure_pgadmin-data
+[2026-06-14 17:36:51] [INFO] Тип: Docker volume, имя: 1c_infrastructure_pgadmin-data
+[2026-06-14 17:36:51] [INFO] Команда: docker run --rm -v 1c_infrastructure_pgadmin-data:/volume -v D:\Docker_Backups\Backup_2026-06-14_17-34-02\Volumes:/backup alpine tar czf /backup/1c_infrastructure_pgadmin-data.tar.gz -C /volume .
+[2026-06-14 17:36:54] [INFO] Архив создан: 716.64 КБ
+[2026-06-14 17:36:54] [INFO] Проверка целостности архива...
+[2026-06-14 17:36:55] [SUCCESS] Volume pgAdmin заархивирован: 716.64 КБ (время: 4с)
+[2026-06-14 17:37:16] [INFO] Начало архивации: PostgreSQL (10.19 ГБ) [1/9]
+[2026-06-14 17:37:16] [INFO] Создание архива: 1c_infrastructure_postgres-data
+[2026-06-14 17:37:16] [INFO] Тип: Docker volume, имя: 1c_infrastructure_postgres-data
+[2026-06-14 17:37:16] [INFO] Команда: docker run --rm -v 1c_infrastructure_postgres-data:/volume -v D:\Docker_Backups\Backup_2026-06-14_17-34-02\Volumes:/backup alpine tar czf /backup/1c_infrastructure_postgres-data.tar.gz -C /volume .
+[2026-06-14 17:42:15] [INFO] Архив создан: 5.02 ГБ
+[2026-06-14 17:42:15] [INFO] Проверка целостности архива...
+[2026-06-14 17:44:23] [SUCCESS] Volume PostgreSQL заархивирован: 5.02 ГБ (время: 427с)
+[2026-06-14 17:44:30] [ERROR] Неверный ввод:   x
+[2026-06-14 17:44:41] [INFO] Пользователь запросил итоги
+[2026-06-14 17:44:41] [INFO] === ИТОГИ БЭКАПА ===
+[2026-06-14 17:44:41] [SUCCESS] Этап 1: 11698 файлов, 1.61 ГБ
+[2026-06-14 17:44:41] [SUCCESS]   База postgres: 1017 Б
+[2026-06-14 17:44:41] [SUCCESS]   База gitea: 30.34 КБ
+[2026-06-14 17:44:41] [SUCCESS] Этап 3: 4 файлов, 39.99 КБ
+[2026-06-14 17:44:41] [SUCCESS]   Volume VoceChat (семейный): 64.14 МБ
+[2026-06-14 17:44:41] [SUCCESS]   Volume Аналитика: 13.59 МБ
+[2026-06-14 17:44:41] [SUCCESS]   Volume VoceChat-Notify: 13.12 МБ
+[2026-06-14 17:44:41] [SUCCESS]   Volume Gitea (репозитории): 31.14 КБ
+[2026-06-14 17:44:41] [SUCCESS]   Volume Portainer: 72.04 КБ
+[2026-06-14 17:44:41] [SUCCESS]   Volume Prometheus: 81.52 МБ
+[2026-06-14 17:44:41] [SUCCESS]   Volume Grafana: 20.99 МБ
+[2026-06-14 17:44:41] [SUCCESS]   Volume pgAdmin: 716.64 КБ
+[2026-06-14 17:44:41] [SUCCESS]   Volume PostgreSQL: 5.02 ГБ
+[2026-06-14 17:44:41] [SUCCESS] Общий размер бэкапа: 6.83 ГБ
+[2026-06-14 17:44:41] [INFO] === БЭКАП ЗАВЕРШЁН ===
