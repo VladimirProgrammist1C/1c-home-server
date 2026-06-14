@@ -199,10 +199,10 @@ docker-compose ps  # все сервисы должны быть "Up (healthy)"
 
 **Возможности:**
 - ✅ **4-этапный бэкап** с интерактивным выбором:
-        1. Конфиги проекта (docker-compose.yml, .env, monitoring/)
-        2. Не-1С базы PostgreSQL (через whitelist)
-        3. Конфиги PostgreSQL (postgresql.conf, pg_hba.conf)
-        4. Docker volumes и bind mounts
+  - Конфиги проекта (docker-compose.yml, .env, monitoring/)
+  - Не-1С базы PostgreSQL (через whitelist)
+  - Конфиги PostgreSQL (postgresql.conf, pg_hba.conf)
+  - Docker volumes и bind mounts
 - ✅ **Whitelist не-1С баз** — защита от случайного бэкапа рабочих 1С баз
 - ✅ **Start-Process** вместо `docker run` — без зависаний терминала
 - ✅ **Проверка целостности** gzip-архивов
