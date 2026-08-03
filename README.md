@@ -9,6 +9,17 @@
 
 ---
 
+## 📊 Статистика репозитория <a name = "-статистика-репозитория"></a>
+
+| Метрика | Значение |
+|---------|----------|
+| 📦 **Всего скачиваний всех релизов** | ![Всего скачиваний](https://img.shields.io/github/downloads/VladimirProgrammist1C/1c-home-server/total?style=flat-square&label=всего&color=blue) |
+| 📥 **Скачиваний релиза v2.1.0** | ![Скачиваний v2.1.0](https://img.shields.io/github/downloads/VladimirProgrammist1C/1c-home-server/v2.1.0/total?style=flat-square&label=v2.1.0&color=green) |
+| ⭐ **Звёзды на GitHub** | ![Звёзды](https://img.shields.io/github/stars/VladimirProgrammist1C/1c-home-server?style=flat-square&label=звёзды&color=yellow) |
+| 🍴 **Форки** | ![Форки](https://img.shields.io/github/forks/VladimirProgrammist1C/1c-home-server?style=flat-square&logo=github) |
+
+---
+
 ##  Что нового <a name="-что-нового"></a>
 
 | Дата | Изменение | Ссылка |
@@ -28,6 +39,7 @@
 
 ## 📋 Содержание <a name="-содержание"></a>
 - [🏠 1C Infrastructure](#-1c-infrastructure)
+  - [📊 Статистика репозитория ](#-статистика-репозитория-)
   - [Что нового ](#что-нового-)
   - [📋 Содержание ](#-содержание-)
   - [Сервисы ](#сервисы-)
